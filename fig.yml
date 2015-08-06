@@ -1,5 +1,0 @@
-app:
-    build: .
-    command: make BUNYAN_LEVEL=0 run
-    ports:
-     - "8000:8000"
