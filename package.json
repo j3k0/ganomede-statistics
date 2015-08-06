@@ -1,8 +1,8 @@
 {
-  "name": "ganomede-turngame",
-  "version": "1.1.0",
-  "api": "turngame/v1",
-  "description": "Ganomede turngame micro service",
+  "name": "ganomede-statistics",
+  "version": "1.0.0",
+  "api": "statistics/v1",
+  "description": "Ganomede statistics micro service",
   "main": "index.js",
   "scripts": {
     "start": "./node_modules/.bin/forever start index.js",
