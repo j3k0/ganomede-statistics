@@ -1,142 +1,95 @@
-Turn-Game
----------
+Statistics
+----------
 
-Manage a turn based game session.
+Manage player statistics.
 
 Relations
 ---------
 
-The turn-game module will:
+The statistics module will:
 
- * Manage in-progress games in the `redis_games` redis database.
- * Perform moves requested by clients using rules-api services, update `redis_games`.
- * Use the `redis_auth` database to check requester identity.
+ * Listen for changes in the coordinator.
+    * Retrieve player games.
+ * Store player statistics in the `redis_statistics` database.
+   * `(gametype, username) -> (gameId) -> { "level": 12, "bestScore": 320, "bestSpree": 22 }`
+ * Update the player `level` metadata in `users`.
 
 Configuration
 -------------
 
- * `RULES_PORT_8080_TCP_ADDR` - IP of the rules service
- * `RULES_PORT_8080_TCP_PORT` - Port of the rules service
- * `REDIS_AUTH_PORT_6379_TCP_ADDR` - IP of the AuthDB redis
- * `REDIS_AUTH_PORT_6379_TCP_PORT` - Port of the AuthDB redis
- * `REDIS_GAMES_PORT_6379_TCP_ADDR` - IP of the games redis
- * `REDIS_GAMES_PORT_6379_TCP_PORT` - Port of the games redis
+ * `COORDINATOR_PORT_8080_TCP_ADDR` - IP of the coordinator service
+ * `COORDINATOR_PORT_8080_TCP_PORT` - Port of the coordinator service
+ * `REDIS_STATISTICS_PORT_6379_TCP_ADDR` - IP of the games redis
+ * `REDIS_STATISTICS_PORT_6379_TCP_PORT` - Port of the games redis
+ * `RANKING_STRATEGY` - (simple)
 
 API
 ---
 
 All requests made to the turngame API require an auth token, passed in the request URL.
 
-# Single Game [/turngame/v1/auth/:token/games/:id]
+# Player statistics [/statistics/v1/:gametype/player/:username/stats]
 
     + Parameters
-        + token (string) ... User authentication token
-        + id (string) ... ID of the game
+        + username (string) ... Player's username
 
-## Retrieve a game state [GET]
+## Retrieve player stats [GET]
 
 ### response [200] OK
 
     {
-        "id": "ab12345789",
-        "type": "triominos/v1",
-        "players": [ "some_username_1", "some_username_2" ],
-        "turn": "some_username_1",
-        "status": "active",
-        "gameData": { ... }
-    }
-
-Possible status:
-
- * `inactive`
- * `active`
- * `gameover`
-
-# Games Collection [/turngame/v1/auth/:token/games]
-
-    + Parameters
-        + token (string) ... User authentication token
-
-## Create a game [POST]
-
-Use the appropriate `rules-api` service to initiate a new game.
-
-### body (application/json)
-
-    {
-        "type": "triominos/v1",
-        "players": [ "some_username_1", "some_username_2" ],
-        "gameConfig": {
-            ... game specific data to be passed to the rules-api ...
-        }
-    }
-
-### response [200] OK
-
-    {
-        "id": "1234",
-        "type": "triominos/v1",
-        "players": [ "some_username", "other_username" ],
-        "turn": "some_username",
-        "status": "inactive",
-        "gameData": {
-            ... game specific data ...
-        }
-    }
-
-# Moves Collection [/turngame/v1/auth/:token/games/:id/moves]
-
-    + Parameters
-        + token (string) ... Authentication token
-        + id (string) ... ID of the game
-
-## Add a move to a game [POST]
-
-### body (application/json)
-
-    {
-        "moveData": { ... }
-    }
-
-### response [200] OK
-
-    {
-        "id": "string",
-        "type": "triominos/v1",
-        "players": [ "some_username", "other_username" ],
-        "turn": "other_username",
-        "status": "active",
-        "gameData": {
-            ... game specific data ...
+        "alltimes": {
+            "numGames": 12,
+            "numVictories: 6,
+            "ranking": 121,
+            "bestScore": 420,
+            "bestSpree": 21
         },
-        "moveResult" {
-            ... game specific data ...
+        "weekly": {
+            "numGames": 3,
+            "numVictories: 2,
+            "ranking": 28,
+            "bestScore": 381,
+            "bestSpree": 2
         }
     }
 
-### response [400] Bad Request
+# Games archive [/statistics/v1/:gametype/player/:username/archive]
 
-    {
-        "code": "InvalidPosition"
-    }
+    + Parameters
+        + username (string) ... Player's username
 
-List of codes will be application dependent, as returned by the `rules-api`
+## List users game [GET]
 
-## List moves made on the given game [GET]
+    + ?after=timestamp (int) ... Only gets after a given timestamp
 
 ### response [200] OK
 
     [
         {
-            "player": "some_username",
-            "move": { ... }
+            "id": "123456788",
+            "date": 149202010847293,
+            "players" : [{
+                "username": "jeko",
+                "score": 33,
+                "newLevel": 770
+            }, {
+                "username": "sousou",
+                "score": 319,
+                "newLevel": 640
+            }]
         },
         {
-            "player": "other_username",
-            "move": { ... }
-        },
-        {
-            "player": "some_username",
-            "move": { ... }
+            "id": "123456789",
+            "date": 149202039203920,
+            "players" : [{
+                "username": "jeko",
+                "score": 93,
+                "newLevel": 750
+            }, {
+                "username": "TheChicken",
+                "score": 218,
+                "newLevel": 1834
+            }]
         }
     ]
