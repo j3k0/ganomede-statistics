@@ -28,7 +28,7 @@ API
 
 All requests made to the turngame API require an auth token, passed in the request URL.
 
-# Player statistics [/statistics/v1/:gametype/player/:username/stats]
+# Player statistics [/statistics/v1/:gametype/:version/:username/stats]
 
     + Parameters
         + username (string) ... Player's username
@@ -54,7 +54,7 @@ All requests made to the turngame API require an auth token, passed in the reque
         }
     }
 
-# Games archive [/statistics/v1/:gametype/player/:username/archive]
+# Games archive [/statistics/v1/:gametype/:version/:username/archive]
 
     + Parameters
         + username (string) ... Player's username

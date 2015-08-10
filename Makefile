@@ -45,7 +45,7 @@ clean:
 
 docker-prepare:
 	@mkdir -p doc
-	docker-compose up -d --no-recreate couchGames
+	docker-compose up -d --no-recreate redisStatistics
 
 docker-run: docker-prepare
 	docker-compose run --rm app make run BUNYAN_LEVEL=${BUNYAN_LEVEL}

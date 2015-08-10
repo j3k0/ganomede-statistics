@@ -1,7 +1,7 @@
 log = require "./log"
 aboutApi = require "./about-api"
 pingApi = require "./ping-api"
-turngameApi = require './turngame'
+statistics = require './statistics'
 
 addRoutes = (prefix, server) ->
   log.info "adding routes to #{prefix}"
@@ -13,8 +13,8 @@ addRoutes = (prefix, server) ->
   aboutApi.addRoutes prefix, server
 
   # Turngame
-  turngame = turngameApi()
-  turngame(prefix, server)
+  statisticsApi = statistics.createApi()
+  statisticsApi.addRoutes prefix, server
 
 initialize = (callback) ->
   log.info "initializing backend"
