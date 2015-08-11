@@ -11,47 +11,19 @@ called = ->
 
 describe 'statistics.utils', ->
 
-  describe 'clone', ->
-    it 'clones an object', ->
-      expect(utils.clone {a:1}).to.eql {a:1}
-      expect(utils.clone(x = {a:1})).not.to.be x
-
-  describe 'extend', ->
-    it 'extends the fields of an object', ->
-      expect(utils.extend {a:1}, {b:2}).to.eql {a:1, b:2}
-    it 'overrides the first objects properties', ->
-      expect(utils.extend {a:1,b:2}, {b:3}).to.eql {a:1, b:3}
-    it 'does not change the source objects', ->
-      x = a:1, b:2
-      y = b:3
-      z = utils.extend(x,y)
-      expect(x).to.eql a:1,b:2
-      expect(y).to.eql b:3
-      expect(z).to.eql a:1,b:3
-
-  describe 'sendError', ->
-    it 'sends the error and call next', ->
-      expect(utils.sendError(nop,nop)).to.be.a Function
-      utils.sendError(a=called(),b=called()) "dummy"
-      expect(a.called).to.be true
-      expect(b.called).to.be true
-
-  describe 'getParams', ->
+  describe 'readParams', ->
     it 'returns a Task', ->
-      expect(utils.getParams(1,2,3)).to.be.a Task
+      expect(utils.readParams(1,2,3)).to.be.a Task
     it 'resolves as follows', (done) ->
-      req = params:
+      params =
         gameType: "a"
         gameVersion: "b"
         username: "c"
       s = (data) ->
-        expect(data.params.req).to.be req
-        expect(data.params.res).to.eql 2
-        expect(data.params.next).to.eql 3
         expect(data.gameType).to.eql "a/b"
         expect(data.username).to.eql "c"
         done()
-      utils.getParams(req,2,3).fork notCalled,s
+      utils.readParams(params).fork notCalled,s
 
   describe 'checkParams', ->
     expectError = (done,status) -> (err) ->
@@ -75,21 +47,20 @@ describe 'statistics.utils', ->
       payload = gameType: "game/v1", username: "alice"
       utils.checkParams payload
       .fork notCalled, expectSuccess(done, payload)
-    it 'chains nicely with getParams', (done) ->
-      req = params:
+    it 'chains nicely with readParams', (done) ->
+      params =
         gameType: "a"
         gameVersion: "b"
         username: "c"
-      payload = gameType:"a/b", username:"c", params:
-        req:req, res:2, next:3
-      utils.getParams(req,2,3)
+      payload = gameType:"a/b", username:"c"
+      utils.readParams(params)
       .chain utils.checkParams
       .fork notCalled, expectSuccess(done, payload)
-    it 'fails when chained with getParams', (done) ->
-      req = params:
+    it 'fails when chained with readParams', (done) ->
+      params =
         gameVersion: "b"
         username: "c"
-      utils.getParams(req,2,3)
+      utils.readParams(params)
       .chain utils.checkParams
       .fork expectError(done, 400), notCalled
 
@@ -98,5 +69,7 @@ describe 'statistics.utils', ->
 
   describe 'getStats', ->
     it 'is pending'
+
+  describe 'stats', ->
 
 # vim: ts=2:sw=2:et:

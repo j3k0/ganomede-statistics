@@ -1,4 +1,5 @@
 log = require '../log'
+redis = require 'redis'
 
 PREFIX_SEPARATOR = ':'
 
@@ -22,4 +23,20 @@ class Storage
     #  moves = replies[0]
     #  callback(null, moves.map (move) -> JSON.parse(move))
 
+#
+# StorageConfig -> Storage
+#
+# StorageConfig: {
+#   host: String
+#   port: String
+#   prefix: String
+# }
+#
+Storage.create = exports.createStorage = (config) ->
+  new Storage(
+    redis.createClient(config.port, config.host)
+    config.prefix
+  )
+
 module.exports = Storage
+

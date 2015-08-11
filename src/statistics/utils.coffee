@@ -1,58 +1,67 @@
 restify = require 'restify'
-redis = require 'redis'
 Task = require 'data.task'
-Maybe = require 'data.maybe'
 alkindi = require 'alkindi'
 
-Storage = require './storage'
 log = require '../log'
+extend = require('../toolbox').extend
+
+#
+# Implicit types used by this module
+#
+# Storage: (see ./storage.coffee)
+#
+# ShortType: String
+# Version: String
+# FullType: String
+# Username: String
+#
+# RequestParams: {
+#   gameType: ShortType
+#   gameVersion: Version
+#   username: Username
+# }
+#
+# Params: {
+#   gameType: FullType
+#   username: Username
+# }
+#
+# Archive: {
+#   gameType: FullType
+#   username: Username
+#   archive: PlayerArchive (see alkindi)
+# }
+#
+# Stats: {
+#   gameType: FullType
+#   username: Username
+#   archive: PlayerArchive (see alkindi)
+#   stats: PlayerStats (see alkindi)
+# }
+#
+# ResponseArchive: PlayerArchive (see alkindi)
+#
+# ResponseStats: PlayerStats (see alkindi)
+#
 
 module.exports = exports = {}
 
-clone = exports.clone = (obj) -> JSON.parse(JSON.stringify(obj))
-
-extend = exports.extend = (object, properties) ->
-  ret = {}
-  for key, val of object
-    ret[key] = val
-  for key, val of properties
-    ret[key] = val
-  ret
-
-sendError = exports.sendError = (send, next) -> (err) ->
-  log.error err
-  send err
-  next()
-
-sendSuccess = exports.sendSuccess = (send, next) -> (data) ->
-  log.info data
-  send data
-  next()
-
-createStorage = exports.createStorage = (config) ->
-  new Storage(
-    redis.createClient(config.redis.port, config.redis.host)
-    config.redis.prefix
-  )
-
-# String -> String -> String
+# Build full game type from short type and version.
+#
+# ShortType -> Version -> FullType
 fullType = exports.fullType = (gameType, gameVersion) ->
   if gameType && gameVersion
   then "#{gameType}/#{gameVersion}"
   else null
 
-#
-# Middlewares
-#
-
 # Format request parameters
-# req -> res -> next -> Task(Params)
-getParams = exports.getParams =
-(req, res, next) -> new Task (reject, resolve) ->
+#
+# RequestParams -> Task(Params)
+readParams = exports.readParams =
+(params) -> new Task (reject, resolve) ->
   resolve
-    gameType: fullType req?.params?.gameType, req?.params?.gameVersion
-    username: req?.params?.username
-    params: req:req, res:res, next:next
+    gameType: fullType params?.gameType, params?.gameVersion
+    username: params?.username
 
 # Params -> Task(Params)
 checkParams = exports.checkParams =
@@ -69,19 +78,31 @@ loadArchive = exports.loadArchive =
     else resolve extend params, archive:data
 
 # Archive -> Stats
-getStats = exports.getStats =
-(data) -> extend data, stats:alkindi.getPlayerStats(data.archive)
+statsForArchive = exports.statsForArchive = (data) ->
+  extend data, stats:alkindi.getPlayerStats(data.archive)
 
-debug = exports.debug =
-(title) -> (data) ->
+# Trace A to the console.
+#
+# String -> A -> A
+debug = exports.debug = (title) -> (data) ->
   log.info title:title, extend(data, params:true)
   data
 
-performIO = exports.performIO = (res, next, io) ->
-  io.fork(
-    sendError(res.send.bind(res), next),
-    sendSuccess(res.send.bind(res), next)
-  )
+# RequestParams -> Task(Archive)
+archiveRequest = exports.archiveRequest = (storage, params) ->
+  readParams params
+  .chain checkParams
+  .chain loadArchive(storage)
 
+# RequestParams -> Task(ResponseStats)
+statsEndpoint = exports.statsEndpoint = (storage, params) ->
+  archiveRequest storage, params
+  .map   statsForArchive
+  .map   (data) -> data.stats
+
+# RequestParams -> Task(ResponseArchive)
+archiveEndpoint = exports.archiveEndpoint = (storage, params) ->
+  archiveRequest storage, params
+  .map   (data) -> data.archive
 
 # vim: ts=2:sw=2:et:

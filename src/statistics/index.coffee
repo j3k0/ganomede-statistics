@@ -1,33 +1,29 @@
 config = require '../../config'
-u = require('./utils')
+endpoint = require '../endpoint'
+utils = require './utils'
+Storage = require './storage'
 
 # .../stats endpoint
 stats = (storage) -> (req, res, next) ->
-  u.performIO res, next,
-    u.getParams(req, res, next)
-    .chain u.checkParams
-    .chain u.loadArchive(storage)
-    .map   u.getStats
-    .map   (data) -> data.stats
+  endpoint.performIO res, next,
+    utils.statsEndpoint(storage, req.params)
 
 # .../archive endpoint
 archive = (storage) -> (req, res, next) ->
-  u.performIO res, next,
-    u.getParams(req, res, next)
-    .chain u.checkParams
-    .chain u.loadArchive(storage)
-    .map   (data) -> data.archive
+  endpoint.performEndpointIO res, next,
+    utils.archiveEndpoint(storage, req.params)
 
+# Create a Statistics API
 createApi = (options={}) ->
 
   # Initialization
-  storage = options.storage || u.createStorage(config)
+  storage = options.storage || Storage.create(config.redis)
 
   # Routes
   addRoutes: (prefix, server) ->
-    endpoint = "/#{prefix}/:gameType/:gameVersion/:username"
-    server.get "#{endpoint}/stats",   stats(storage)
-    server.get "#{endpoint}/archive", archive(storage)
+    base = "/#{prefix}/:gameType/:gameVersion/:username"
+    server.get "#{base}/stats",   stats(storage)
+    server.get "#{base}/archive", archive(storage)
 
 module.exports =
   createApi: createApi
