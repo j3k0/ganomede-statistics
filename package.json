@@ -19,6 +19,7 @@
     "coffee-script": "^1.8.0",
     "coffeelint": "^1.6.1",
     "concat-stream": "^1.4.7",
+    "control.async": "^0.5.2",
     "data.maybe": "^1.2.1",
     "data.task": "^3.0.0",
     "eslint": "^0.10.0",

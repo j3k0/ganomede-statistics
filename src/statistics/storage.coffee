@@ -11,27 +11,26 @@ class Storage
   key: (gameType, parts...) ->
     [@prefix, gameType].concat(parts).join(PREFIX_SEPARATOR)
 
-  getArchive: (type, username, callback) ->
-    callback null, []
-    #@_moves(@multi(), id).exec (err, replies) ->
-    #  if (err)
-    #    log.error 'Redis.moves() failed',
-    #      err: err
-    #      id: id
-    #    return callback(err)
-    #
-    #  moves = replies[0]
-    #  callback(null, moves.map (move) -> JSON.parse(move))
+  # Type -> Username -> GetArchiveCallback
+  getArchives: (type, username, callback) ->
+    @redis.zrange [@key(type, username), 0, -1], (err, reply) ->
+      if err
+        log.error 'redis.getArchives() failed',
+          err: err
+          id: id
+        callback err
+      else
+        callback null, JSON.parse(reply)
 
-#
+  # Type -> Username -> GameOutcome -> Void
+  saveArchive: (type, username, game) ->
+    @redis.zadd [
+      @key(type, username),
+      Math.round(game.date),
+      JSON.stringify(game)
+    ]
+
 # StorageConfig -> Storage
-#
-# StorageConfig: {
-#   host: String
-#   port: String
-#   prefix: String
-# }
-#
 Storage.create = exports.createStorage = (config) ->
   new Storage(
     redis.createClient(config.port, config.host)

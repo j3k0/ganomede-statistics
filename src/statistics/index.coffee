@@ -2,6 +2,7 @@ config = require '../../config'
 endpoint = require '../endpoint'
 utils = require './utils'
 Storage = require './storage'
+Fetcher = require './fetcher'
 
 # .../stats endpoint
 stats = (storage) -> (req, res, next) ->
@@ -17,13 +18,22 @@ archive = (storage) -> (req, res, next) ->
 createApi = (options={}) ->
 
   # Initialization
-  storage = options.storage || Storage.create(config.redis)
+  storage = options.storage ||
+    Storage.create(config.redis)
 
-  # Routes
+  # Create a games fetcher
+  fetcher = options.fetcher ||
+    Fetcher.create(config.coordinator, storage)
+
+  # Register routes
   addRoutes: (prefix, server) ->
     base = "/#{prefix}/:gameType/:gameVersion/:username"
     server.get "#{base}/stats",   stats(storage)
     server.get "#{base}/archive", archive(storage)
+
+  # Run the games fetcher
+  runFetcher: () ->
+    fetcher.run()
 
 module.exports =
   createApi: createApi

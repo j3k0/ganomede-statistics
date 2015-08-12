@@ -73,7 +73,7 @@ checkParams = exports.checkParams =
 # Storage -> Params -> Task(Archive)
 loadArchive = exports.loadArchive =
 (storage) -> (params) -> new Task (reject, resolve) ->
-  storage.getArchive params.gameType, params.username, (err, data) ->
+  storage.getArchives params.gameType, params.username, (err, data) ->
     if err then reject err
     else resolve extend params, archive:data
 

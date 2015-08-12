@@ -1,4 +1,5 @@
 expect = require 'expect.js'
+Maybe = require 'data.maybe'
 
 describe 'toolbox', ->
 
@@ -21,5 +22,19 @@ describe 'toolbox', ->
       expect(x).to.eql a:1,b:2
       expect(y).to.eql b:3
       expect(z).to.eql a:1,b:3
+
+  describe 'monadsChain', ->
+    monadsChain = require('../src/toolbox').monadsChain
+    init = ()  -> Maybe.of(1)
+    f    = (x) -> Maybe.fromNullable(x)
+    testChain = monadsChain init, f
+    it 'returns the initial monad for an empty array', ->
+      expect(testChain([]).get()).to.eql 1
+    it 'chains monads', ->
+      expect(testChain([2]).get()).to.eql 2
+      expect(testChain([2,3]).get()).to.eql 3
+      expect(testChain([2]).isNothing).to.be false
+      expect(testChain([2,null]).isNothing).to.be true
+      expect(testChain([null,2]).isNothing).to.be true
 
 # vim: ts=2:sw=2:et:
