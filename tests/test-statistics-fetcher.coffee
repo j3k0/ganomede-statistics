@@ -129,9 +129,9 @@ describe 'statistics.fetcher', ->
       expect(task).to.be.a Task
       task.fork(
         notCalled
-        (newState) ->
-          expect(newState.secret).to.eql "1234"
-          expect(newState.last_seq).to.eql testGamesBody.last_seq
+        (newSince) ->
+          # expect(newState.secret).to.eql "1234"
+          expect(newSince).to.eql testGamesBody.last_seq
           ja = storage.archives["tigger/v1/jeko"]
           sa = storage.archives["tigger/v1/sousou"]
           expect(ja.length).to.eql 3

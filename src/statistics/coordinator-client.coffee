@@ -4,6 +4,7 @@
 
 restify = require 'restify'
 log = require '../log'
+Task = require 'data.task'
 
 class CoordinatorClient
 
@@ -12,7 +13,8 @@ class CoordinatorClient
       throw new Error('jsonClient required')
     @client = jsonClient
 
-  gameover: (secret, since) -> new Task (reject, resolve) ->
+  # String -> String -> Task<GamesBody>
+  gameover: (secret, since) -> new Task (reject, resolve) =>
     path = gameoverPath @client, secret, since
     @client.get path, gameoverHandler(reject, resolve)
 
@@ -20,7 +22,7 @@ CoordinatorClient.create = (jsonClient) -> new CoordinatorClient(jsonClient)
 
 # JsonClient -> Subpath -> Path
 endpoint = CoordinatorClient._endpoint = (jsonClient, subpath) ->
-  "#{jsonClient.url?.pathname || ''}#{subpath}"
+  "#{jsonClient?.url?.pathname || ''}#{subpath}"
 
 # JsonClient -> Secret -> Since -> Path
 gameoverPath = CoordinatorClient._gameoverPath =
@@ -32,10 +34,8 @@ gameoverPath = CoordinatorClient._gameoverPath =
 gameoverHandler = CoordinatorClient._gameoverHandler =
 (reject, resolve) -> (err, req, res, body) ->
   if err
-    log.error "/gameover failed", err
     reject err
   else if res.statusCode != 200
-    log.error "GET /gameover code", code:res.statusCode
     reject new Error "HTTP#{res.statusCode}"
   else
     resolve body

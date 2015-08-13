@@ -17,13 +17,8 @@ archive = (storage) -> (req, res, next) ->
 # Create a Statistics API
 createApi = (options={}) ->
 
-  # Initialization
   storage = options.storage ||
     Storage.create(config.redis)
-
-  # Create a games fetcher
-  fetcher = options.fetcher ||
-    Fetcher.create(config.coordinator, storage)
 
   # Register routes
   addRoutes: (prefix, server) ->
@@ -32,8 +27,14 @@ createApi = (options={}) ->
     server.get "#{base}/archive", archive(storage)
 
   # Run the games fetcher
-  runFetcher: () ->
-    fetcher.run()
+  runFetcherStep: (callback) ->
+
+    fetcher = options.fetcher ||
+      Fetcher.create(config.coordinator, storage)
+
+    fetcher.runStep callback
+
+  quit: -> storage.quit()
 
 module.exports =
   createApi: createApi

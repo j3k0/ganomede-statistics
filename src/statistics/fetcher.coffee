@@ -2,6 +2,7 @@ clients = require '../clients'
 log = require '../log'
 extend = require('../toolbox').extend
 monadsChain = require('../toolbox').monadsChain
+taskFromNode = require('../toolbox').taskFromNode
 Task = require 'data.task'
 Async = require('control.async')(Task)
 CoordinatorClient = require './coordinator-client'
@@ -21,40 +22,64 @@ nop = () ->
 class Fetcher
 
   # FetcherConfig -> Fetcher
-  constructor: (config, @storage) ->
-    clientFactory = clients(config, CoordinatorClient.create)
+  constructor: (@config, @storage) ->
+    clientFactory = clients(@config, CoordinatorClient.create)
     @client = clientFactory "coordinator/v1"
     @state =
       secret: process.env.API_SECRET
       since:  -1
-    log.info "Fetcher initialized", config:config
     
   # Run the fetcher endlessly
   #
   # _ -> _
-  run: () ->
+  runStep: (callback) ->
     fetcherStep(@client, @storage, @state).fork(
       (err)  =>
-        log.error "Fetcher error", err
-        process.nextTick @run
-      (data) =>
-        @state = data
-        process.nextTick @run
+        log.error "Fetcher Error", @config
+        if err.message != "lock can't be acquired"
+          log.error err.stack
+        callback err
+      (data) ->
+        callback data
     )
 
 # FetcherConfig -> Fetcher
 Fetcher.create = (config, storage) -> new Fetcher(config, storage)
 
-# CoordinatorClient -> Storage -> FetcherState -> Task(FetcherState)
-fetcherStep = Fetcher._step = (client, storage, state) ->
-  client.gameover state.secret, state.since
-  .chain processGamesBody(storage, state)
+# CoordinatorClient -> Storage -> Secret -> Task(FetcherState)
+fetcherStep = Fetcher._step = (client, storage, secret) ->
+  lockWorker(storage)
+  .chain loadLastSeq(storage)
+  .chain loadGames(client, secret)
+  .chain processGamesBody(storage)
+  .chain saveLastSeq(storage)
+  .chain unlockWorker(storage)
 
-# Storage -> FetcherState -> GamesBody -> Task(FetcherState)
+# CoordinatorClient -> Secret -> Since -> Task<GamesBody>
+loadGames = (client, secret) -> (lastSeq) ->
+  client.gameover secret, lastSeq
+
+# Storage -> _ -> Task<Since>
+loadLastSeq = (storage) -> () -> new Task (reject, resolve) ->
+  storage.getLastSeq taskFromNode(reject, resolve)
+
+# Storage -> Since -> Task<lastSeq>
+saveLastSeq = (storage) -> (lastSeq) -> new Task (reject, resolve) ->
+  storage.saveLastSeq lastSeq
+  resolve lastSeq
+
+# Storage -> Task<_>
+lockWorker = (storage) -> storage.lockTask "worker"
+
+# Storage -> _ -> Task<_>
+unlockWorker = (storage) -> () -> new Task (reject, resolve) ->
+  storage.unlock "worker", taskFromNode(reject, resolve)
+
+# Storage -> FetcherState -> GamesBody -> Task<Since>
 processGamesBody = Fetcher._processGamesBody =
 (storage, state) -> (body) ->
   processGames(storage)(body?.results || [])
-  .map () -> extend state, last_seq: body.last_seq
+  .map () -> body.last_seq
 
 # Game -> Task(_)
 processGame = Fetcher._processGame = (storage) -> (game) ->

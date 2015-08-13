@@ -9,7 +9,7 @@ RUN chown -R app /home/app
 USER app
 RUN npm install
 
-COPY .eslintrc .eslintignore config.js coffeelint.json Makefile index.js /home/app/code/
+COPY .eslintrc .eslintignore config.js coffeelint.json Makefile index.js statistics-worker.sh statistics-worker.coffee /home/app/code/
 COPY tests /home/app/code/tests
 COPY src /home/app/code/src
 

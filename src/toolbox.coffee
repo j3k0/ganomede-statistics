@@ -22,3 +22,7 @@ monadsChain = exports.monadsChain = (init, f) -> (array) ->
   array.forEach (value) ->
     m = m.chain f.bind(null, value)
   m
+
+taskFromNode = exports.taskFromNode =
+(reject, resolve) -> (err, value) ->
+  if err then reject err else resolve value
