@@ -26,16 +26,23 @@ Configuration
 API
 ---
 
-All requests made to the turngame API require an auth token, passed in the request URL.
-
-# Player statistics [/statistics/v1/:gametype/:version/:username/stats]
+All requests made to the statistics API require gameType, version and username passed in the request URL.
 
     + Parameters
+        + gameType (string) ... Family of game
+        + version  (string) ... Major version number the game
         + username (string) ... Player's username
 
-## Retrieve player stats [GET]
-
+# Player rank [/statistics/v1/:gametype/:version/:username/rank]
+## Retrieve [GET]
 ### response [200] OK
+
+    12
+
+# Player statistics [/statistics/v1/:gametype/:version/:username/stats]
+## Retrieve player stats [GET]
+### response [200] OK
+DEPRECATED (not implemented this way)
 
     {
         "alltimes": {
@@ -55,9 +62,6 @@ All requests made to the turngame API require an auth token, passed in the reque
     }
 
 # Games archive [/statistics/v1/:gametype/:version/:username/archive]
-
-    + Parameters
-        + username (string) ... Player's username
 
 ## List users game [GET]
 

@@ -4,6 +4,7 @@ alkindi = require 'alkindi'
 
 log = require '../log'
 extend = require('../toolbox').extend
+taskFromNode = require('../toolbox').taskFromNode
 
 #
 # Implicit types used by this module
@@ -81,6 +82,12 @@ loadArchive = exports.loadArchive =
 statsForArchive = exports.statsForArchive = (data) ->
   extend data, stats:alkindi.getPlayerStats(data.archive)
 
+# Storage -> Params -> Rank
+getRank = exports.getRank =
+(storage) -> (params) -> new Task (reject, resolve) ->
+  storage.getRank params.gameType, params.username,
+    taskFromNode(reject, resolve)
+
 # Trace A to the console.
 #
 # String -> A -> A
@@ -104,5 +111,11 @@ statsEndpoint = exports.statsEndpoint = (storage, params) ->
 archiveEndpoint = exports.archiveEndpoint = (storage, params) ->
   archiveRequest storage, params
   .map   (data) -> data.archive
+
+# RequestParams -> Task(ResponseArchive)
+rankEndpoint = exports.rankEndpoint = (storage, params) ->
+  readParams params
+  .map getRank(storage)
+  .map (rank) -> +rank
 
 # vim: ts=2:sw=2:et:

@@ -13,7 +13,7 @@ sendError = exports.sendError = (send, next) -> (err) ->
 
 # Send and log a successful request
 sendSuccess = exports.sendSuccess = (send, next) -> (data) ->
-  log.info data
+  # log.info data
   send data
   next()
 

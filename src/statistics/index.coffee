@@ -14,6 +14,11 @@ archive = (storage) -> (req, res, next) ->
   endpoint.performIO res, next,
     utils.archiveEndpoint(storage, req.params)
 
+# .../rank endpoint
+rank = (storage) -> (req, res, next) ->
+  endpoint.performIO res, next,
+    utils.rankEndpoint(storage, req.params)
+
 # Create a Statistics API
 createApi = (options={}) ->
 
@@ -25,6 +30,7 @@ createApi = (options={}) ->
     base = "/#{prefix}/:gameType/:gameVersion/:username"
     server.get "#{base}/stats",   stats(storage)
     server.get "#{base}/archive", archive(storage)
+    server.get "#{base}/rank", rank(storage)
 
   # Run the games fetcher
   runFetcherStep: (callback) ->
