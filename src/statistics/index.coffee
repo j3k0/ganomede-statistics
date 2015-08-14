@@ -11,7 +11,7 @@ stats = (storage) -> (req, res, next) ->
 
 # .../archive endpoint
 archive = (storage) -> (req, res, next) ->
-  endpoint.performEndpointIO res, next,
+  endpoint.performIO res, next,
     utils.archiveEndpoint(storage, req.params)
 
 # Create a Statistics API
