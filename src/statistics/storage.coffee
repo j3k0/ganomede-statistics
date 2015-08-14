@@ -5,33 +5,51 @@ taskFromNode = require('../toolbox').taskFromNode
 
 PREFIX_SEPARATOR = ':'
 LOCK_TIMEOUT_SEC = (10)
+LEADERBOARD_KEY = '#'
 
 class Storage
   constructor: (redis, prefix) ->
     @redis = redis
     @prefix = prefix
 
-  key: (gameType, parts...) ->
-    [@prefix, gameType].concat(parts).join(PREFIX_SEPARATOR)
+  key: (parts...) ->
+    [@prefix].concat(parts).join(PREFIX_SEPARATOR)
 
   # Type -> Username -> GetArchiveCallback
   getArchives: (type, username, callback) ->
-    @redis.zrange [@key(type, username), 0, -1], (err, reply) ->
+    @redis.zrange @key(type, username), 0, -1, (err, reply) ->
       if err
         log.error 'redis.getArchives() failed',
           err: err
           id: id
         callback err
       else
-        callback null, JSON.parse(reply)
+        callback null, reply.map(safeParse)
+
+  safeParse = (reply) ->
+    try
+      return JSON.parse(reply)
+    catch err
+      return null
 
   # Type -> Username -> GameOutcome -> Void
-  saveArchive: (type, username, game) ->
-    @redis.zadd [
-      @key(type, username),
-      Math.round(game.date),
-      JSON.stringify(game)
-    ]
+  archiveGameOutcome: (type, username, gameOutcome) ->
+    @redis.zadd(
+      @key(type, username)
+      Math.round(gameOutcome.game?.date)
+      JSON.stringify(gameOutcome)
+    )
+
+  # Type -> Username -> Level -> Void
+  saveLevel: (type, username, level) ->
+    @redis.zadd(
+      @key(type, LEADERBOARD_KEY)
+      level
+      username
+    )
+
+  getRank: (type, username, callback) ->
+    @redis.zrevrank @key(type, LEADERBOARD_KEY), username, callback
 
   lockKey: (lockName) -> @key("lock", lockName)
 
@@ -55,7 +73,7 @@ class Storage
       callback null, value
 
   saveLastSeq: (value) ->
-    @redis.set @key("lastseq"), lastseq
+    @redis.set @key("lastseq"), value
 
   quit: ->
     @redis.quit()
@@ -87,7 +105,7 @@ EXPIRED = "expired"
 # Redis -> Key -> Timeout -> Task<RedisStatus>
 acquireFreeLock = (redis, lockkey, timeout) -> new Task (reject, resolve) ->
   redis.setnx lockkey, timeout, taskFromNode(reject, resolve)
-  
+
 # RedisStatus -> LockStatus
 freeLockStatus = (value) ->
   if +value == 1 then ACQUIRED else LOCKED

@@ -69,13 +69,14 @@ fakeClient = ->
 fakeStorage = ->
   archives: { jeko:[], sousou:[] }
   key: (type,username) -> "#{type}/#{username}"
-  saveArchiveArgs: []
-  saveArchive: (type, username, game) ->
+  archiveGameOutcomeArgs: []
+  archiveGameOutcome: (type, username, game) ->
     a = @archives[@key(type,username)] ||
       (@archives[@key(type,username)] = [])
     a.push game
-    @saveArchiveArgs.push [type,username,game]
+    @archiveGameOutcomeArgs.push [type,username,game]
     null
+  saveLevel: () ->
   getArchives: (type, username, callback) ->
     a = @archives[@key(type,username)]
     if !a then return callback null, []
@@ -111,13 +112,14 @@ describe 'statistics.fetcher', ->
       task.fork(
         notCalled
         () ->
-          expect(storage.saveArchiveArgs.length).to.eql 2
-          expect(storage.saveArchiveArgs[0][0]).to.eql "tigger/v1"
-          expect(storage.saveArchiveArgs[0][1]).to.eql "jeko"
-          expect(storage.saveArchiveArgs[0][2]).to.eql testOutcomes[0].game
-          expect(storage.saveArchiveArgs[1][0]).to.eql "tigger/v1"
-          expect(storage.saveArchiveArgs[1][1]).to.eql "sousou"
-          expect(storage.saveArchiveArgs[1][2]).to.eql testOutcomes[1].game
+          args = storage.archiveGameOutcomeArgs
+          expect(args.length).to.eql 2
+          expect(args[0][0]).to.eql "tigger/v1"
+          expect(args[0][1]).to.eql "jeko"
+          expect(args[0][2]).to.eql testOutcomes[0].game
+          expect(args[1][0]).to.eql "tigger/v1"
+          expect(args[1][1]).to.eql "sousou"
+          expect(args[1][2]).to.eql testOutcomes[1].game
           done()
       )
 
@@ -142,5 +144,3 @@ describe 'statistics.fetcher', ->
       )
 
 # vim: ts=2:sw=2:et:
-
-

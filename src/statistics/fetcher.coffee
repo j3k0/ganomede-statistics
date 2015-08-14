@@ -25,15 +25,13 @@ class Fetcher
   constructor: (@config, @storage) ->
     clientFactory = clients(@config, CoordinatorClient.create)
     @client = clientFactory "coordinator/v1"
-    @state =
-      secret: process.env.API_SECRET
-      since:  -1
-    
+    @secret = process.env.API_SECRET
+
   # Run the fetcher endlessly
   #
   # _ -> _
   runStep: (callback) ->
-    fetcherStep(@client, @storage, @state).fork(
+    fetcherStep(@client, @storage, @secret).fork(
       (err)  =>
         log.error "Fetcher Error", @config
         if err.message != "lock can't be acquired"
@@ -113,19 +111,27 @@ loadPlayersArchives = (storage, type, players) ->
   tasks = players.map loadPlayerArchive(storage, type)
   Async.parallel tasks
 
-# Storage -> Type -> Username -> Task<GameOutcome>
+# Storage -> Type -> Username -> Task<PlayerArchive>
 loadPlayerArchive = (storage, type) ->
   (username) -> new Task (reject, resolve) ->
-    storage.getArchives type, username, (err, data) ->
+    storage.getArchives type, username, (err, games) ->
       if err
       then reject err
       else resolve
         username: username
-        games: data
+        games: games
 
 # Storage -> PlayerGameOutcome -> Task<_>
 saveOutcome = (storage) -> (outcome) -> new Task (reject, resolve) ->
-  resolve storage.saveArchive(
+  log.info "new level",
+    username: outcome.username
+    level: outcome.game.outcome.newLevel
+  storage.saveLevel(
+    outcome.type
+    outcome.username
+    outcome.game.outcome.newLevel
+  )
+  resolve storage.archiveGameOutcome(
     outcome.type
     outcome.username
     outcome.game
@@ -146,11 +152,14 @@ akPlayerScore = (player) ->
   username: player.name
   score: player.score
 
+noDecay = (t0,t1,level) ->
+  newLevel: level
+
 # GameWithArchives -> Array<PlayerGameOutcome>
 addGame = Fetcher._addGame = (gameWA) ->
   alkindi.addGame(
     alkindi.simpleLevelUpdate,
-    alkindi.simpleLevelDecay,
+    noDecay,
     gameWA.archives, akGame(gameWA.game)
   ).map (outcome) -> extend outcome, type:gameWA.game.type
 

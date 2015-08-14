@@ -27,7 +27,9 @@ endpoint = CoordinatorClient._endpoint = (jsonClient, subpath) ->
 # JsonClient -> Secret -> Since -> Path
 gameoverPath = CoordinatorClient._gameoverPath =
 (jsonClient, secret, since) ->
-  params = "secret=#{secret}&since=#{since}"
+  params = "secret=#{secret}"
+  if since != null && since != -1
+    params = "#{params}&since=#{since}"
   endpoint jsonClient, "/gameover?#{params}"
 
 # (Error -> _) -> (GamesBody -> _) -> Error -> Request -> Response -> GamesBody
