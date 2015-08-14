@@ -61,10 +61,9 @@ loadGames = (client, secret) -> (lastSeq) ->
 loadLastSeq = (storage) -> () -> new Task (reject, resolve) ->
   storage.getLastSeq taskFromNode(reject, resolve)
 
-# Storage -> Since -> Task<lastSeq>
+# Storage -> Since -> Task<_>
 saveLastSeq = (storage) -> (lastSeq) -> new Task (reject, resolve) ->
-  storage.saveLastSeq lastSeq
-  resolve lastSeq
+  storage.saveLastSeq lastSeq, taskFromNode(reject, resolve)
 
 # Storage -> Task<_>
 lockWorker = (storage) -> storage.lockTask "worker"
@@ -134,11 +133,11 @@ archiveGame = (storage) -> (pgr) -> new Task (reject, resolve) ->
       date:     pgr.game.game.date
       username: pgr.username
       outcome:  pgr.game.outcome
-  resolve storage.archiveGame(
+  storage.archiveGame(
     pgr.type
     pgr.username
     pgr.game
-    taskFromNode (reject, resolve)
+    taskFromNode(reject, resolve)
   )
 
 # Storage -> PlayerGameOutcome -> Task<PlayerGameOutcome>
@@ -147,7 +146,7 @@ saveLevel = (storage) -> (pgo) -> new Task (reject, resolve) ->
     pgo.type
     pgo.username
     pgo.game.outcome.newLevel
-    taskFromNode (
+    taskFromNode(
       reject
       () -> resolve pgo
     )
@@ -157,10 +156,13 @@ saveLevel = (storage) -> (pgo) -> new Task (reject, resolve) ->
 getRank = (storage) -> (pgo) -> new Task (reject, resolve) ->
   storage.getRank pgo.type, pgo.username, taskFromNode(
     reject
-    (rank) -> extend pgo,
-      outcome:
-        newLevel: pgo.outcome.newLevel
-        newRank:  rank
+    (rank) -> resolve
+      username: pgo.username,
+      type: pgo.type,
+      game: extend pgo.game,
+        outcome:
+          newLevel: pgo.game.outcome.newLevel
+          newRank:  rank
   )
 
 # Storage -> Array<PlayerGameOutcome> -> Task(_)

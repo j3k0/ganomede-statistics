@@ -36,6 +36,7 @@ testOutcomes = [{
       }]
     outcome:
       newLevel:30
+      newRank: 12
   type:"tigger/v1"
 }, {
   username:"sousou"
@@ -52,6 +53,7 @@ testOutcomes = [{
       }]
     outcome:
       newLevel:7
+      newRank: 12
   type:"tigger/v1"
 }]
 
@@ -69,14 +71,15 @@ fakeClient = ->
 fakeStorage = ->
   archives: { jeko:[], sousou:[] }
   key: (type,username) -> "#{type}/#{username}"
-  archiveGameOutcomeArgs: []
-  archiveGameOutcome: (type, username, game) ->
+  archiveGameArgs: []
+  archiveGame: (type, username, game, callback) ->
     a = @archives[@key(type,username)] ||
       (@archives[@key(type,username)] = [])
     a.push game
-    @archiveGameOutcomeArgs.push [type,username,game]
-    null
-  saveLevel: () ->
+    @archiveGameArgs.push [type,username,game]
+    callback null, null
+  saveLevel: (t,u,l,callback) -> callback null, null
+  getRank: (t,u,callback) -> callback null, 12
   getArchives: (type, username, callback) ->
     a = @archives[@key(type,username)]
     if !a then return callback null, []
@@ -112,7 +115,7 @@ describe 'statistics.fetcher', ->
       task.fork(
         notCalled
         () ->
-          args = storage.archiveGameOutcomeArgs
+          args = storage.archiveGameArgs
           expect(args.length).to.eql 2
           expect(args[0][0]).to.eql "tigger/v1"
           expect(args[0][1]).to.eql "jeko"

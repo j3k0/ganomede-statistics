@@ -31,7 +31,7 @@ class Storage
   archiveGame: (type, username, gameRank, callback) ->
     @redis.zadd(
       @key(type, username)
-      Math.round(gameRank.game?.date)
+      Math.round(1000 * gameRank.game?.date)
       JSON.stringify(gameRank)
       callback
     )
