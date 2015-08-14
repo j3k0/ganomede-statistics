@@ -122,19 +122,45 @@ loadPlayerArchive = (storage, type) ->
         games: games
 
 # Storage -> PlayerGameOutcome -> Task<_>
-saveOutcome = (storage) -> (outcome) -> new Task (reject, resolve) ->
-  log.info "new level",
-    username: outcome.username
-    level: outcome.game.outcome.newLevel
-  storage.saveLevel(
-    outcome.type
-    outcome.username
-    outcome.game.outcome.newLevel
+saveOutcome = (storage) -> (outcome) ->
+  saveLevel(storage) outcome
+  .chain getRank(storage)
+  .chain archiveGame(storage)
+
+# Storage -> PlayerGameRank -> Task<_>
+archiveGame = (storage) -> (pgr) -> new Task (reject, resolve) ->
+  if pgr.username == "TheChicken"
+    log.info "archived",
+      date:     pgr.game.game.date
+      username: pgr.username
+      outcome:  pgr.game.outcome
+  resolve storage.archiveGame(
+    pgr.type
+    pgr.username
+    pgr.game
+    taskFromNode (reject, resolve)
   )
-  resolve storage.archiveGameOutcome(
-    outcome.type
-    outcome.username
-    outcome.game
+
+# Storage -> PlayerGameOutcome -> Task<PlayerGameOutcome>
+saveLevel = (storage) -> (pgo) -> new Task (reject, resolve) ->
+  storage.saveLevel(
+    pgo.type
+    pgo.username
+    pgo.game.outcome.newLevel
+    taskFromNode (
+      reject
+      () -> resolve pgo
+    )
+  )
+
+# Storage -> PlayerGameOutcome -> Task<PlayerGameRank>
+getRank = (storage) -> (pgo) -> new Task (reject, resolve) ->
+  storage.getRank pgo.type, pgo.username, taskFromNode(
+    reject
+    (rank) -> extend pgo,
+      outcome:
+        newLevel: pgo.outcome.newLevel
+        newRank:  rank
   )
 
 # Storage -> Array<PlayerGameOutcome> -> Task(_)

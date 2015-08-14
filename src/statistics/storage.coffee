@@ -2,6 +2,7 @@ log = require '../log'
 redis = require 'redis'
 Task = require 'data.task'
 taskFromNode = require('../toolbox').taskFromNode
+safeParse = require('../toolbox').safeParseJSON
 
 PREFIX_SEPARATOR = ':'
 LOCK_TIMEOUT_SEC = (10)
@@ -26,26 +27,22 @@ class Storage
       else
         callback null, reply.map(safeParse)
 
-  safeParse = (reply) ->
-    try
-      return JSON.parse(reply)
-    catch err
-      return null
-
-  # Type -> Username -> GameOutcome -> Void
-  archiveGameOutcome: (type, username, gameOutcome) ->
+  # Type -> Username -> GameRank -> Void
+  archiveGame: (type, username, gameRank, callback) ->
     @redis.zadd(
       @key(type, username)
-      Math.round(gameOutcome.game?.date)
-      JSON.stringify(gameOutcome)
+      Math.round(gameRank.game?.date)
+      JSON.stringify(gameRank)
+      callback
     )
 
   # Type -> Username -> Level -> Void
-  saveLevel: (type, username, level) ->
+  saveLevel: (type, username, level, callback) ->
     @redis.zadd(
       @key(type, LEADERBOARD_KEY)
       level
       username
+      callback
     )
 
   getRank: (type, username, callback) ->
@@ -72,8 +69,8 @@ class Storage
       if err then value = -1
       callback null, value
 
-  saveLastSeq: (value) ->
-    @redis.set @key("lastseq"), value
+  saveLastSeq: (value, callback) ->
+    @redis.set @key("lastseq"), value, callback
 
   quit: ->
     @redis.quit()

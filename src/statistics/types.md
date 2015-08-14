@@ -18,7 +18,6 @@ PlayerArchive: = {
 }
 
 GameOutcome: {
-  type: String,
   game: {
     date: Timestamp,
     id: String,
@@ -33,6 +32,24 @@ PlayerGameOutcome: {
   username: String
   type: String
   game: GameOutcome
+}
+
+GameRank: {
+  game: {
+    date: Timestamp,
+    id: String,
+    players: Array<PlayerScore>
+  }
+  outcome: {
+    newLevel: Int
+    newRank: Int
+  }
+}
+
+PlayerGameRank: {
+  username: String
+  type: String
+  game: GameRank
 }
 
 StorageConfig: {

@@ -26,3 +26,10 @@ monadsChain = exports.monadsChain = (init, f) -> (array) ->
 taskFromNode = exports.taskFromNode =
 (reject, resolve) -> (err, value) ->
   if err then reject err else resolve value
+
+safeParseJSON = exports.safeParseJSON = (reply) ->
+  try
+    return JSON.parse(reply)
+  catch err
+    return null
+
