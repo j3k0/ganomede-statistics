@@ -107,7 +107,6 @@ rankEndpoint = exports.rankEndpoint = (storage, params) ->
   readParams params
   .chain checkParams
   .chain getRank(storage)
-  .map debug "getRank"
-  .map (rank) -> rank: rank|0
+  .map (rank) -> rank: 1 + rank
 
 # vim: ts=2:sw=2:et:

@@ -174,7 +174,7 @@ getRank = (storage) -> (pgo) -> new Task (reject, resolve) ->
       game: extend pgo.game,
         outcome:
           newLevel: pgo.game.outcome.newLevel
-          newRank:  rank
+          newRank:  1 + rank
   )
 
 # Storage -> Array<PlayerGameOutcome> -> Task(_)
