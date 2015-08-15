@@ -73,7 +73,7 @@ class Storage
     @redis.set @key("lastseq"), value, callback
 
   incrGameIndex: () ->
-    @redis.incr @("gameindex"), callback
+    @redis.incr @key("gameindex"), callback
 
   quit: ->
     @redis.quit()
