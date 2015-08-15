@@ -36,7 +36,7 @@ testOutcomes = [{
       }]
     outcome:
       newLevel:30
-      newRank: 12
+      newRank: 13
   type:"tigger/v1"
 }, {
   username:"sousou"
@@ -53,7 +53,7 @@ testOutcomes = [{
       }]
     outcome:
       newLevel:7
-      newRank: 12
+      newRank: 13
   type:"tigger/v1"
 }]
 
