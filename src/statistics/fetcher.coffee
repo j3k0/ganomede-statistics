@@ -172,7 +172,7 @@ saveOutcomes = Fetcher._saveOutcomes = (storage) ->
 # Game -> AkGame
 akGame = (game) ->
   id: game.id
-  date: 0.001 * (game.date || +new Date())
+  date: 0.001 * (game.date || 1439596800000) # 15/08/2015 00:00 GMT
   players: players(game).map akPlayerScore
 
 # PlayerScore -> AkPlayerScore
