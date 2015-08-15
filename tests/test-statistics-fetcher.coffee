@@ -89,6 +89,8 @@ fakeStorage = ->
       callback null, @archives[@key(type, username)]
     else
       callback new Error("error")
+  incrGameIndex: (callback) ->
+    callback null, @gameindex = ((@gameindex || 0) + 1)
 
 describe 'statistics.fetcher', ->
 

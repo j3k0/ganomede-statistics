@@ -81,6 +81,7 @@ processGamesBody = Fetcher._processGamesBody =
 # Game -> Task(_)
 processGame = Fetcher._processGame = (storage) -> (game) ->
   loadArchives(storage, game)
+  .chain incrGameIndex(storage)
   .map   addGame
   .chain saveOutcomes(storage)
 
@@ -90,7 +91,14 @@ processGames = (storage) -> monadsChain Task.of, processGame(storage)
 # Storage -> Game -> Task(GameWithArchives)
 loadArchives = (storage, game) ->
   loadPlayersArchives storage, game.type, usernames(game)
-  .map gameWithArchive(game)
+  .map gameWithArchive game
+
+# Storage -> GameWithArchives -> GameWithArchives
+incrGameIndex = (storage) -> (gameWA) -> new Task (reject, resolve) ->
+  storage.incrGameIndex taskFromNode(
+    reject
+    (value) -> resolve addIndex(+value, gameWA)
+  )
 
 # Game -> Array<Username>
 usernames = (game) ->
@@ -102,8 +110,13 @@ players = (game) ->
 
 # Game -> Array<PlayerArchive> -> GameWithArchives
 gameWithArchive = (game) -> (archives) ->
+  index: 0
   game: game
   archives: archives
+
+# Index -> GameWithArchives -> GameWithArchives
+addIndex = (index, gameWA) ->
+  extend gameWA, index:index
 
 # Storage -> Type -> Array<Username> -> Task(Array<PlayerArchive>)
 loadPlayersArchives = (storage, type, players) ->
@@ -169,11 +182,15 @@ getRank = (storage) -> (pgo) -> new Task (reject, resolve) ->
 saveOutcomes = Fetcher._saveOutcomes = (storage) ->
   monadsChain Task.of, saveOutcome(storage)
 
-# Game -> AkGame
-akGame = (game) ->
-  id: game.id
-  date: 0.001 * (game.date || 1439596800000) # 15/08/2015 00:00 GMT
-  players: players(game).map akPlayerScore
+# 15/08/2015 00:00 GMT
+defaultDate = (gameWA) ->
+  1439596800000 + 1000 * gameWA.index
+
+# GameWithArchives -> AkGame
+akGame = (gameWA) ->
+  id: gameWA.game.id
+  date: 0.001 * (gameWA.game.date || defaultDate(gameWA))
+  players: players(gameWA.game).map akPlayerScore
 
 # PlayerScore -> AkPlayerScore
 akPlayerScore = (player) ->
@@ -188,7 +205,8 @@ addGame = Fetcher._addGame = (gameWA) ->
   alkindi.addGame(
     alkindi.simpleLevelUpdate,
     noDecay,
-    gameWA.archives, akGame(gameWA.game)
+    gameWA.archives, akGame(gameWA)
   ).map (outcome) -> extend outcome, type:gameWA.game.type
 
 module.exports = Fetcher
+# vim: ts=2:sw=2:et:

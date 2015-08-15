@@ -8,8 +8,9 @@ Username: String
 GetArchivesCallback: Error -> Array<GameOutcome> -> Void
 
 GameWithArchives: {
-  game:Game
-  archives:Array<PlayerArchive>
+  game: Game
+  archives: Array<PlayerArchive>
+  index: Int
 }
 
 PlayerArchive: = {
