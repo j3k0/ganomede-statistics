@@ -78,10 +78,6 @@ loadArchive = exports.loadArchive =
     if err then reject err
     else resolve extend params, archive:data
 
-# Archive -> Stats
-statsForArchive = exports.statsForArchive = (data) ->
-  extend data, stats:alkindi.getPlayerStats(data.archive)
-
 # Storage -> Params -> Rank
 getRank = exports.getRank =
 (storage) -> (params) -> new Task (reject, resolve) ->
@@ -101,12 +97,6 @@ archiveRequest = exports.archiveRequest = (storage, params) ->
   .chain checkParams
   .chain loadArchive(storage)
 
-# RequestParams -> Task(ResponseStats)
-statsEndpoint = exports.statsEndpoint = (storage, params) ->
-  archiveRequest storage, params
-  .map   statsForArchive
-  .map   (data) -> data.stats
-
 # RequestParams -> Task(ResponseArchive)
 archiveEndpoint = exports.archiveEndpoint = (storage, params) ->
   archiveRequest storage, params
@@ -117,6 +107,7 @@ rankEndpoint = exports.rankEndpoint = (storage, params) ->
   readParams params
   .chain checkParams
   .chain getRank(storage)
-  .map (rank) -> +rank
+  .map debug "getRank"
+  .map (rank) -> rank: rank|0
 
 # vim: ts=2:sw=2:et:

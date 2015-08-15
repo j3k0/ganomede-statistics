@@ -4,11 +4,6 @@ utils = require './utils'
 Storage = require './storage'
 Fetcher = require './fetcher'
 
-# .../stats endpoint
-stats = (storage) -> (req, res, next) ->
-  endpoint.performIO res, next,
-    utils.statsEndpoint(storage, req.params)
-
 # .../archive endpoint
 archive = (storage) -> (req, res, next) ->
   endpoint.performIO res, next,
@@ -28,7 +23,6 @@ createApi = (options={}) ->
   # Register routes
   addRoutes: (prefix, server) ->
     base = "/#{prefix}/:gameType/:gameVersion/:username"
-    server.get "#{base}/stats",   stats(storage)
     server.get "#{base}/archive", archive(storage)
     server.get "#{base}/rank", rank(storage)
 
