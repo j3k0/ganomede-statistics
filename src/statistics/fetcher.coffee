@@ -141,11 +141,10 @@ saveOutcome = (storage) -> (outcome) ->
 
 # Storage -> PlayerGameRank -> Task<_>
 archiveGame = (storage) -> (pgr) -> new Task (reject, resolve) ->
-  if pgr.username == "TheChicken"
-    log.info "archived",
-      date:     pgr.game.game.date
-      username: pgr.username
-      outcome:  pgr.game.outcome
+  log.info "archived",
+    date:     pgr.game.game.date
+    username: pgr.username
+    outcome:  pgr.game.outcome
   storage.archiveGame(
     pgr.type
     pgr.username
