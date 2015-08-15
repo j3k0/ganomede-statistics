@@ -115,7 +115,8 @@ archiveEndpoint = exports.archiveEndpoint = (storage, params) ->
 # RequestParams -> Task(ResponseArchive)
 rankEndpoint = exports.rankEndpoint = (storage, params) ->
   readParams params
-  .map getRank(storage)
+  .chain checkParams
+  .chain getRank(storage)
   .map (rank) -> +rank
 
 # vim: ts=2:sw=2:et:
