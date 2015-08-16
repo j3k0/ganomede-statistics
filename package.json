@@ -1,6 +1,6 @@
 {
   "name": "ganomede-statistics",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "api": "statistics/v1",
   "description": "Ganomede statistics micro service",
   "main": "index.js",
@@ -12,7 +12,7 @@
   "author": "Jean-Christophe Hoelt <hoelt@fovea.cc>",
   "license": "GPL",
   "dependencies": {
-    "alkindi": "^1.1.0",
+    "alkindi": "^1.1.1",
     "authdb": "^0.1.0",
     "blanket": "^1.1.6",
     "bunyan": "^1.2.3",
