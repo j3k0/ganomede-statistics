@@ -143,8 +143,8 @@ describe 'statistics.fetcher', ->
           sa = storage.archives["tigger/v1/sousou"]
           expect(ja.length).to.eql 3
           expect(sa.length).to.eql 3
-          expect(ja[ja.length-1].outcome.newLevel).to.eql 90
-          expect(sa[sa.length-1].outcome.newLevel).to.eql 21
+          expect(ja[ja.length-1].outcome.newLevel).to.eql 87
+          expect(sa[sa.length-1].outcome.newLevel).to.eql 15
           done()
       )
 
