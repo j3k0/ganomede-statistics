@@ -183,7 +183,7 @@ saveOutcomes = Fetcher._saveOutcomes = (storage) ->
 
 # 15/08/2015 00:00 GMT
 defaultDate = (gameWA) ->
-  1439596800000 + 1000 * gameWA.index
+  1000 * (alkindi.TRIPOCH + gameWA.index)
 
 # GameWithArchives -> AkGame
 akGame = (gameWA) ->
@@ -202,7 +202,7 @@ noDecay = (t0,t1,level) ->
 # GameWithArchives -> Array<PlayerGameOutcome>
 addGame = Fetcher._addGame = (gameWA) ->
   alkindi.addGame(
-    alkindi.simpleLevelUpdate,
+    alkindi.relativeLevelUpdate,
     noDecay,
     gameWA.archives, akGame(gameWA)
   ).map (outcome) -> extend outcome, type:gameWA.game.type
