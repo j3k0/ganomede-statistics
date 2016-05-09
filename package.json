@@ -1,6 +1,6 @@
 {
-  "name": "ganomede-statistics",
-  "version": "1.0.17",
+  "name": "statistics",
+  "version": "1.0.18",
   "api": "statistics/v1",
   "description": "Ganomede statistics micro service",
   "main": "index.js",
