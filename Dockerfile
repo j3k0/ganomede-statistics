@@ -1,4 +1,4 @@
-FROM node:0.10.33-slim
+FROM node:0.10.48-slim
 EXPOSE 8000
 MAINTAINER Jean-Christophe Hoelt <hoelt@fovea.cc>
 RUN useradd app -d /home/app
@@ -18,5 +18,7 @@ RUN chown -R app /home/app
 
 WORKDIR /home/app/code
 USER app
-RUN make
+RUN ./node_modules/.bin/eslint src/ && \
+	./node_modules/.bin/coffeelint -q src tests
+
 CMD node_modules/.bin/forever index.js

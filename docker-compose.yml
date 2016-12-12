@@ -1,14 +1,14 @@
 app:
     build: .
-    command: make BUNYAN_LEVEL=0 run
+    command: node index.js
     volumes:
-     - src:/home/app/code/src
-     - tests:/home/app/code/tests
-     - doc:/home/app/code/doc
-     - Makefile:/home/app/code/Makefile
-     - index.js:/home/app/code/index.js
-     - config.js:/home/app/code/config.js
-     - package.json:/home/app/code/package.json
+     - ./src:/home/app/code/src
+     - ./tests:/home/app/code/tests
+     - ./doc:/home/app/code/doc
+     - ./Makefile:/home/app/code/Makefile
+     - ./index.js:/home/app/code/index.js
+     - ./config.js:/home/app/code/config.js
+     - ./package.json:/home/app/code/package.json
     ports:
      - 8000:8000
     links:

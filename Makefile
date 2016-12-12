@@ -51,7 +51,7 @@ docker-run: docker-prepare
 	docker-compose run --rm app make run BUNYAN_LEVEL=${BUNYAN_LEVEL}
 
 docker-test: docker-prepare
-	docker-compose run --rm app make test BUNYAN_LEVEL=${BUNYAN_LEVEL}
+	docker-compose run --rm app ./node_modules/.bin/mocha -b --recursive --compilers coffee:coffee-script/register tests
 
 docker-coverage: docker-prepare
 	docker-compose run --rm app make coverage
