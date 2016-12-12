@@ -131,8 +131,8 @@ describe 'statistics.fetcher', ->
   describe 'processGamesBody', ->
     it 'saves all games', (done) ->
       storage = fakeStorage()
-      state = secret:"1234", last_seq:5
-      task = Fetcher._processGamesBody(storage, state) testGamesBody
+      # state = secret:"1234", last_seq:5
+      task = Fetcher._processGamesBody(storage) testGamesBody
       expect(task).to.be.a Task
       task.fork(
         notCalled
