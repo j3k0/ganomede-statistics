@@ -1,6 +1,10 @@
 expect = require 'expect.js'
 Fetcher = require '../src/statistics/fetcher'
 Task = require 'data.task'
+coordinatorGameOverFull = require './coordinator-gameover-full.json'
+coordinatorGameOverShort = require './coordinator-gameover-short.json'
+coordinatorGameOverNoDate= require './coordinator-gameover-nodate.json'
+types = require '../src/statistics/types'
 
 nop = ->
 notCalled = -> throw new Error('should not be called')
@@ -11,13 +15,14 @@ called = ->
 
 testGame = (id) ->
   id: id
+  date: 1
   type: "tigger/v1"
   gameOverData:
     players: [{
-      name: "jeko",
+      username: "jeko",
       score: 21
     }, {
-      name: "sousou",
+      username: "sousou",
       score: 20
     }]
 
@@ -127,6 +132,25 @@ describe 'statistics.fetcher', ->
           expect(args[1][2]).to.eql testOutcomes[1].game
           done()
       )
+
+  describe 'loadGames', ->
+    testWith = (testData, done) ->
+      fakeClient =
+        gameover: () -> Task.of(testData)
+      task = Fetcher._loadGames(fakeClient, null)(null)
+      expect(task).to.be.a Task
+      task.fork(
+        notCalled
+        (body) ->
+          types.gamesBody body
+          done()
+      )
+    it 'retrieve and format the games from couchdb (quick test)', (done) ->
+      testWith coordinatorGameOverShort, done
+    it 'fills up missing date', (done) ->
+      testWith coordinatorGameOverNoDate, done
+    it 'process many games quickly and without failing', (done) ->
+      testWith coordinatorGameOverFull, done
 
   describe 'processGamesBody', ->
     it 'saves all games', (done) ->

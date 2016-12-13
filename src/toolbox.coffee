@@ -23,6 +23,15 @@ monadsChain = exports.monadsChain = (init, f) -> (array) ->
     m = m.chain f.bind(null, value)
   m
 
+# mondadChain an array, return the array itself
+# boxed into the monad (ignoring what was done to
+# the data)
+# Usefull for stuff that don't affect the data,
+# like storing in a database...
+# (() -> M<_>) -> (T -> M<_>) -> Array<T> -> M<Array<T>>
+silentChain = exports.silentChain = (init, f) -> (array) ->
+  monadsChain(init, f)(array).map () -> array
+
 taskFromNode = exports.taskFromNode =
 (reject, resolve) -> (err, value) ->
   if err then reject err else resolve value

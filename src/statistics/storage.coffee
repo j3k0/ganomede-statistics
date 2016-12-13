@@ -8,6 +8,8 @@ PREFIX_SEPARATOR = ':'
 LOCK_TIMEOUT_SEC = (10)
 LEADERBOARD_KEY = '#'
 
+roundedDate = (date) -> Math.round(1000 * date)
+
 class Storage
   constructor: (redis, prefix) ->
     @redis = redis
@@ -16,7 +18,7 @@ class Storage
   key: (parts...) ->
     [@prefix].concat(parts).join(PREFIX_SEPARATOR)
 
-  # Type -> Username -> GetArchiveCallback
+  # GameType -> Username -> GetArchiveCallback
   getArchives: (type, username, callback) ->
     @redis.zrange @key(type, username), 0, -1, (err, reply) ->
       if err
@@ -27,16 +29,26 @@ class Storage
       else
         callback null, reply.map(safeParse)
 
-  # Type -> Username -> GameRank -> Void
-  archiveGame: (type, username, gameRank, callback) ->
-    @redis.zadd(
-      @key(type, username)
-      Math.round(1000 * gameRank.game?.date)
-      JSON.stringify(gameRank)
-      callback
-    )
+  # waitingListAdd :: (Game) -> (Err -> Data -> _) -> _
+  waitingListAdd: (game, callback) ->
+    
+  # waitingListRem :: (Game) -> (Err -> Data -> _) -> _
+  waitingListRem: (game, callback) ->
 
-  # Type -> Username -> Level -> Void
+  # GameType -> Username -> GameRank -> (Err -> Data -> _) -> _
+  archiveGame: (type, username, gameRank, callback) ->
+    k = @key(type, username)
+    d = roundedDate(gameRank.game?.date)
+    v = JSON.stringify(gameRank)
+    @redis.zadd k, d, v, callback
+
+  # GameType -> Username -> Timestamp -> (Err -> Data -> _) -> _
+  unarchiveGame: (type, username, date, callback) ->
+    k = @key(type, username)
+    d = roundedDate(date)
+    @redis.zremrangebyscore k, d, d, callback
+
+  # GameType -> Username -> Level -> Void
   saveLevel: (type, username, level, callback) ->
     @redis.zadd(
       @key(type, LEADERBOARD_KEY)

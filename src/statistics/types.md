@@ -37,8 +37,8 @@ PlayerGameOutcome: {
 
 GameRank: {
   game: {
-    date: Timestamp,
     id: String,
+    date: Timestamp,
     players: Array<PlayerScore>
   }
   outcome: {
@@ -75,6 +75,7 @@ ProcessOutcome: {
 
 Game: {
   id: String
+  date: Timestamp,
   type: String,
   gameOverData: {
     players: Array<PlayerScore>
