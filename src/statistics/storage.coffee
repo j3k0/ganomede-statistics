@@ -8,7 +8,7 @@ PREFIX_SEPARATOR = ':'
 LOCK_TIMEOUT_SEC = (10)
 LEADERBOARD_KEY = '#'
 
-roundedDate = (date) -> Math.round(1000 * date)
+roundedDate = (date) -> Math.round(date)
 
 class Storage
   constructor: (redis, prefix) ->
@@ -37,16 +37,36 @@ class Storage
 
   # GameType -> Username -> GameRank -> (Err -> Data -> _) -> _
   archiveGame: (type, username, gameRank, callback) ->
-    k = @key(type, username)
-    d = roundedDate(gameRank.game?.date)
-    v = JSON.stringify(gameRank)
+    k = @key type, username
+    d = roundedDate gameRank.game?.date
+    v = JSON.stringify gameRank
     @redis.zadd k, d, v, callback
 
   # GameType -> Username -> Timestamp -> (Err -> Data -> _) -> _
   unarchiveGame: (type, username, date, callback) ->
-    k = @key(type, username)
-    d = roundedDate(date)
+    k = @key type, username
+    d = roundedDate date
     @redis.zremrangebyscore k, d, d, callback
+
+  getLevel: (type, username, date, callback) ->
+    k = @key type, username
+    d = roundedDate date
+    @redis.zrevrangebyscore [
+      k, d, 0, 'LIMIT', 0, 1
+    ], (err, response) ->
+      if err
+        callback err
+      else
+        try
+          gameRank = JSON.parse response
+        catch e
+          callback e
+        callback null, gameRank.outcome.newLevel
+
+  # Get the level of all players at a given date
+  # used to compute the ranking
+  getAllLevels: (type, date, callback) ->
+    @redis.keys
 
   # GameType -> Username -> Level -> Void
   saveLevel: (type, username, level, callback) ->

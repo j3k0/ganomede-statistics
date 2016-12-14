@@ -42,3 +42,12 @@ safeParseJSON = exports.safeParseJSON = (reply) ->
   catch err
     return null
 
+ensure = exports.ensure = (calls) ->
+  ensure.error = null
+  calls.forEach (call) ->
+    try
+      call()
+    catch err
+      ensure.error = err
+  !ensure.error
+

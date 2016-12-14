@@ -185,7 +185,7 @@ types.processOutcome = objectOf 'ProcessOutcome',
 #   players: Array<AkPlayerScore>
 # }
 # see alkindi.Game
-# 
+#
 # AkPlayerScore: = {
 #   username: String,
 #   score: Int

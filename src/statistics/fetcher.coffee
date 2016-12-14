@@ -1,16 +1,61 @@
 Task = require 'data.task'
 Async = require('control.async') Task
 alkindi = require 'alkindi'
+SortedArray = require 'sorted-array'
 
 log = require '../log'
 clients = require '../clients'
-types = require './types'
+{
+  game: isGame
+  username: isUsername
+  gameWithArchives: isGameWithArchive
+  seqNumber: isSeqNumber
+  gamesBody: isGamesBody
+  gameType: isGameType
+  gameOutcome: isGameOutcome
+  playerArchive: isPlayerArchive
+  playerGameOutcome: isPlayerGameOutcome
+  playerGameRank: isPlayerGameRank
+  arrayOf: isArrayOf
+} = require './types'
+
 CoordinatorClient = require './coordinator-client'
 {
-  extend, monadsChain, silentChain, taskFromNode
+  extend, monadsChain, silentChain, taskFromNode, ensure
 } = require '../toolbox'
 
 nop = () ->
+
+# Array [Game] sorted by date
+# TODO: store this on redis... for now let's work from memory
+waitingList = new SortedArray([], (a, b) ->
+  if a.date == b.date
+    # When dates are identical, compare based on player names
+    pa = a.gameOverData.players[0].username
+    pb = b.gameOverData.players[0].username
+    if pa == pb
+    then return 0
+    else if pa < pb
+    then return -1
+    else return 1
+  else if a.date < b.date
+  then -1
+  else  1
+)
+
+waitingListAdd = (game) ->
+  existing = waitingList.search game
+  if existing < 0
+    waitingList.insert game
+  Task.of game
+
+waitingListPop = () ->
+  if waitingList.array.length == 0
+    Task.of null
+  else
+    first = waitingList.array[0]
+    waitingList.array.splice(0, 1)
+    Task.of first
 
 #
 # FetcherConfig: ClientConfig (see ../clients.coffee)
@@ -78,8 +123,9 @@ loadLastSeq = (storage) -> () -> new Task (reject, resolve) ->
 
 # saveLastSeq :: Storage -> SeqNumber -> Task<_>
 saveLastSeq = (storage) -> (lastSeq) -> new Task (reject, resolve) ->
-  types.seqNumber lastSeq
-  storage.saveLastSeq lastSeq, taskFromNode(reject, resolve)
+  if ensure [ -> isSeqNumber lastSeq ]
+  then storage.saveLastSeq lastSeq, taskFromNode(reject, resolve)
+  else reject ensure.error
 
 # lockWorker :: Storage -> Task<_>
 lockWorker = (storage) -> storage.lockTask "worker"
@@ -91,168 +137,243 @@ unlockWorker = (storage) -> () -> new Task (reject, resolve) ->
 # processGamesBody :: Storage -> GamesBody -> Task<SeqNumber>
 processGamesBody = Fetcher._processGamesBody =
   (storage) -> (body) ->
-    types.gamesBody body
-    processGames(storage)(body?.results || [])
-    .map () -> body?.last_seq
+    if ensure [ -> isGamesBody body ]
+      processGames(storage)(body?.results || [])
+      .chain () -> processWaitingList(storage)
+      .map () -> body?.last_seq
+    else
+      Task.rejected ensure.error
+
+# processWaitingList :: Storage -> Task<_>
+processWaitingList = (storage) ->
+  waitingListPop()
+  .chain (game) ->
+    if !game
+      Task.of null
+    else
+      processGame(storage)(game)
+      .chain -> processWaitingList(storage)
 
 # outcomeToGame :: GameType -> GameOutcome -> Game
 outcomeToGame = (type) -> (outcome) ->
-  types.gameType type
-  types.gameOutcome outcome
-  types.game
-    id: outcome.id
-    date: outcome.date
+  if ensure [
+    -> isGameType type
+    -> isGameOutcome outcome
+  ]
+    id: outcome.game.id
+    date: outcome.game.date
     type: type,
     gameOverData:
-      players: outcome.players
+      players: outcome.game.players
 
 concat = (a, b) -> a.concat(b)
 
-# futureOutcomes :: GameWithArchives -> [GameOutcome]
+# outcomes :: GameWithArchives -> [GameOutcome]
 outcomes = (gameWA) ->
-  types.gameWithArchives gameWA
-  gameWA.archives
-  .map((playerArchive) -> playerArchive.games)
-  .reduce(concat, [])
+  if ensure [ -> isGameWithArchive gameWA ]
+    gameWA.archives
+    .map((playerArchive) -> playerArchive.games)
+    .reduce(concat, [])
 
 # futureOutcomes :: GameWithArchives -> [GameOutcome]
 futureOutcomes = (gameWA) ->
-  types.gameWithArchives gameWA
-  outcomes(gameWA)
-  .filter (outcome) -> outcome.game.date > gameWA.game.date
+  if ensure [ -> isGameWithArchive gameWA ]
+    outcomes(gameWA)
+    .filter (outcome) -> outcome.game.date > gameWA.game.date
 
-# keepPastGames :: GameWithArchives -> GameWithArchives
-# keepPastGames = (gameWA) ->
-#   TODO
+# futureGames :: GameWithArchives -> [Game]
+futureGames = (gameWA) ->
+  if ensure [ -> isGameWithArchive gameWA ]
+    futureOutcomes(gameWA)
+    .map outcomeToGame(gameWA.game.type)
 
-# addGameToWaitingList :: Storage -> Game -> Task(_)
+# onlyPastGames :: GameWithArchives -> GameWithArchives
+# returns a GameWithArchives only containing past games
+onlyPastGames = (gameWA) ->
+  if ensure [ -> isGameWithArchive gameWA ]
+    game: gameWA.game
+    index: gameWA.index
+    archives: gameWA.archives.map (playerArchive) ->
+      username: playerArchive.username
+      games: playerArchive.games.filter (gameOutcome) ->
+        gameOutcome.game.date < gameWA.game.date
+
+# addGameToWaitingList :: Storage -> Game -> Task(Game)
 addGameToWaitingList = (storage) -> (game) ->
-  types.game game
-  new Task (reject, resolve) ->
-    storage.addGameToWaitingList game, taskFromNode(reject, resolve)
+  if ensure [ -> isGame game ]
+  then waitingListAdd game
+  else Task.rejected ensure.error
 
 # addGamesToWaitingList :: Storage -> [Game] -> Task([Game])
 addGamesToWaitingList = (storage) ->
   silentChain Task.of, addGameToWaitingList(storage)
 
+# removeGameFromPlayerArchive ::
+#   Storage -> Game -> Username -> Task(_)
+removeGameFromPlayerArchive = (storage, game) -> (username) ->
+  if ensure [
+    -> isGame     game
+    -> isUsername username
+  ]
+    new Task (reject, resolve) ->
+      usernames
+      log.info {
+        date:     game.date
+        username: username
+      }, "unarchived"
+      storage.unarchiveGame(
+        game.type
+        username
+        game.date
+        taskFromNode(reject, resolve)
+      )
+  else
+    Task.rejected ensure.error
+
+# removeGameFromArchives :: Storage -> Game ->Task(_)
 removeGameFromArchives = (storage) -> (game) ->
-  types.game game
-  game.gameOverData.players
+  if ensure [ -> isGame game ]
+    f = removeGameFromPlayerArchive(storage, game)
+    silentChain(Task.of, f) usernames(game)
+  else
+    Task.rejected ensure.error
 
 # cleanup archive of all concerned players
 # removeFromArchives :: Storage -> [Game] -> Task([Game])
 removeGamesFromArchives = (storage) ->
   silentChain Task.of, removeGameFromArchives(storage)
 
-# extractFutureGames :: Storage -> GameWithArchives -> Task(_)
-extractFutureGames = (storage) -> (gameWA) ->
-  types.gameWithArchives gameWA
-  futureOutcomes(gameWA)
-  .map outcomeToGame(gameWA.game.type)
-  .map addGamesToWaitingList(storage)
-  .chain removeGamesFromArchives(storage)
+# noFutureGames :: Storage -> GameWithArchives -> Task(_)
+noFutureGames = (storage, gameWA) ->
+  if ensure [ -> isGameWithArchive gameWA ]
+    games = futureGames gameWA
+    addGamesToWaitingList(storage)(games)
+    .chain removeGamesFromArchives(storage)
+  else
+    Task.rejected ensure.error
 
 # setAsideFutureGames :: Storage -> GameWithArchives -> Task(GameWithArchives)
 setAsideFutureGames = (storage) -> (gameWA) ->
-  types.gameWithArchives gameWA
-  extractFutureGames(storage, gameWA)
-  .map (_) -> keepPastGames(gameWA)
+  if ensure [ -> isGameWithArchive gameWA ]
+    noFutureGames(storage, gameWA)
+    .map -> onlyPastGames(gameWA)
+  else
+    Task.rejected ensure.error
 
 # processGame :: Storage -> Game -> Task(_)
 processGame = Fetcher._processGame = (storage) -> (game) ->
-  types.game game
-  loadArchives(storage, game)
-  # .setAsideFutureGames(storage)
-  .chain incrGameIndex(storage)
-  .map   addGame
-  .chain saveOutcomes(storage)
+  if ensure [ -> isGame game ]
+    loadArchives(storage, game)
+    .chain setAsideFutureGames(storage)
+    .chain incrGameIndex(storage)
+    .map   addGame
+    .chain saveOutcomes(storage)
+  else
+    Task.rejected ensure.error
 
 # processGames :: Storage -> [Game] -> Task([Game])
 processGames = (storage) -> silentChain Task.of, processGame(storage)
 
 # loadArchives :: Storage -> Game -> Task(GameWithArchives)
 loadArchives = (storage, game) ->
-  types.game game
-  loadPlayersArchives storage, game.type, usernames(game)
-  .map gameWithArchives game
+  if ensure [ -> isGame game ]
+    loadPlayersArchives storage, game.type, usernames(game)
+    .map gameWithArchives game
+  else
+    Task.rejected ensure.error
 
 # incrGameIndex :: Storage -> GameWithArchives -> GameWithArchives
 incrGameIndex = (storage) -> (gameWA) -> new Task (reject, resolve) ->
-  types.gameWithArchives gameWA
-  storage.incrGameIndex taskFromNode(
+  if ensure [ -> isGameWithArchive gameWA ]
+  then storage.incrGameIndex taskFromNode(
     reject
     (value) -> resolve addIndex(+value, gameWA)
   )
+  else Task.rejected ensure.error
 
 # usernames :: Game -> [Username]
 usernames = (game) ->
-  types.game game
-  players(game).map (p) -> p.username
+  if ensure [ -> isGame game ]
+  then players(game).map (p) -> p.username
 
 # players :: Game -> [PlayerScore]
 players = (game) ->
-  types.game game
-  game?.gameOverData?.players || []
+  if ensure [ -> isGame game ]
+  then game.gameOverData.players || []
 
 # gameWithArchives :: Game -> [PlayerArchive] -> GameWithArchives
 gameWithArchives = (game) -> (archives) ->
-  types.game game
-  types.arrayOf('[PlayerArchive]', types.playerArchive) archives
-  {
+  if ensure [
+    -> isGame game
+    -> isArrayOf('[PlayerArchive]', isPlayerArchive) archives
+  ]
     index: 0
     game: game
     archives: archives
-  }
 
 # addIndex :: Index -> GameWithArchives -> GameWithArchives
 addIndex = (index, gameWA) ->
-  types.gameWithArchives gameWA
   extend gameWA, index:index
 
-# loadPlayersArchives :: Storage -> GameType -> [Username] -> Task([PlayerArchive])
+# loadPlayersArchives ::
+#   Storage -> GameType -> [Username] -> Task([PlayerArchive])
 loadPlayersArchives = (storage, type, players) ->
-  types.gameType type
-  types.arrayOf('[Username]', types.username) players
-  tasks = players.map loadPlayerArchive(storage, type)
-  Async.parallel tasks
+  if ensure [
+    -> isGameType type
+    -> isArrayOf('[Username]', isUsername) players
+  ]
+    tasks = players.map loadPlayerArchive(storage, type)
+    Async.parallel tasks
+  else
+    Task.rejected ensure.error
 
 # loadPlayerArchive :: Storage -> GameType -> Username -> Task<PlayerArchive>
 loadPlayerArchive = (storage, type) -> (username) ->
-  new Task (reject, resolve) ->
-    types.gameType type
-    types.username username
-    storage.getArchives type, username, (err, games) ->
-      if err
-      then reject err
-      else resolve
-        username: username
-        games: games
+  if ensure [
+    -> isGameType type
+    -> isUsername username
+  ]
+    new Task (reject, resolve) ->
+      storage.getArchives type, username, (err, games) ->
+        if err
+        then reject err
+        else resolve
+          username: username
+          games: games
+  else
+    Task.rejected ensure.error
 
 # saveOutcome :: Storage -> PlayerGameOutcome -> Task<_>
 saveOutcome = (storage) -> (outcome) ->
-  types.playerGameOutcome outcome
-  saveLevel(storage) outcome
-  .chain getRank(storage)
-  .chain archiveGame(storage)
+  if ensure [ -> isPlayerGameOutcome outcome ]
+    saveLevel(storage) outcome
+    .chain getRank(storage)
+    .chain archiveGame(storage)
+  else
+    Task.rejected ensure.error
 
 # archiveGame :: Storage -> PlayerGameRank -> Task<_>
 archiveGame = (storage) -> (pgr) -> new Task (reject, resolve) ->
-  types.playerGameRank pgr
-  log.info "archived",
-    date:     pgr.game.game.date
-    username: pgr.username
-    outcome:  pgr.game.outcome
-  storage.archiveGame(
-    pgr.type
-    pgr.username
-    pgr.game
-    taskFromNode(reject, resolve)
-  )
+  if ensure [ -> isPlayerGameRank pgr ]
+    log.info {
+      date:     pgr.game.game.date
+      username: pgr.username
+      newLevel: pgr.game.outcome.newLevel
+      newRank:  pgr.game.outcome.newRank
+    }, "archived"
+    storage.archiveGame(
+      pgr.type
+      pgr.username
+      pgr.game
+      taskFromNode(reject, resolve)
+    )
+  else
+    Task.rejected ensure.error
 
 # saveLevel :: Storage -> PlayerGameOutcome -> Task<PlayerGameOutcome>
 saveLevel = (storage) -> (pgo) -> new Task (reject, resolve) ->
-  types.playerGameOutcome pgo
-  storage.saveLevel(
+  if ensure [ -> isPlayerGameOutcome pgo ]
+  then storage.saveLevel(
     pgo.type
     pgo.username
     pgo.game.outcome.newLevel
@@ -261,11 +382,12 @@ saveLevel = (storage) -> (pgo) -> new Task (reject, resolve) ->
       () -> resolve pgo
     )
   )
+  else Task.rejected ensure.error
 
 # getRank :: Storage -> PlayerGameOutcome -> Task<PlayerGameRank>
 getRank = (storage) -> (pgo) -> new Task (reject, resolve) ->
-  types.playerGameOutcome pgo
-  storage.getRank pgo.type, pgo.username, taskFromNode(
+  if ensure [ -> isPlayerGameOutcome pgo ]
+  then storage.getRank pgo.type, pgo.username, taskFromNode(
     reject
     (rank) -> resolve
       username: pgo.username,
@@ -275,6 +397,7 @@ getRank = (storage) -> (pgo) -> new Task (reject, resolve) ->
           newLevel: pgo.game.outcome.newLevel
           newRank:  1 + rank
   )
+  else Task.rejected ensure.error
 
 # saveOutcome :: Storage -> [PlayerGameOutcome] -> Task([PlayerGameOutcome])
 saveOutcomes = Fetcher._saveOutcomes = (storage) ->
@@ -294,11 +417,15 @@ noDecay = (t0,t1,level) ->
   newLevel: level
 
 # fromAkOutcome :: AkPlayerGameOutcome -> PlayerGameOutcome
-fromAkOutcome = (type) -> (akOutcome) ->
-  types.playerGameOutcome
-    username: akOutcome.username
-    type: type
-    game: akOutcome.game
+fromAkOutcome = (type) -> (ak) ->
+  username: ak.username
+  type: type
+  game:
+    outcome: ak.game.outcome
+    game:
+      id: ak.game.game.id
+      date: ak.game.game.date * 1000
+      players: ak.game.game.players
 
 # addGame :: GameWithArchives -> [PlayerGameOutcome]
 addGame = Fetcher._addGame = (gameWA) ->
