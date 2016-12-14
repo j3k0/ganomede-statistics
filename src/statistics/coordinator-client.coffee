@@ -15,7 +15,7 @@ class CoordinatorClient
 
   # String -> String -> Task<GamesBody>
   gameover: (secret, since) -> new Task (reject, resolve) =>
-    path = gameoverPath @client, secret, since
+    path = gameoverPath @client, secret, since, 100000000
     @client.get path, gameoverHandler(reject, resolve)
 
 CoordinatorClient.create = (jsonClient) -> new CoordinatorClient(jsonClient)
@@ -26,10 +26,12 @@ endpoint = CoordinatorClient._endpoint = (jsonClient, subpath) ->
 
 # JsonClient -> Secret -> Since -> Path
 gameoverPath = CoordinatorClient._gameoverPath =
-(jsonClient, secret, since) ->
+(jsonClient, secret, since, limit = -1) ->
   params = "secret=#{secret}"
   if since != null && since != -1
     params = "#{params}&since=#{since}"
+  if limit != null && limit != -1
+    params = "#{params}&limit=#{limit}"
   endpoint jsonClient, "/gameover?#{params}"
 
 # (Error -> _) -> (GamesBody -> _) -> Error -> Request -> Response -> GamesBody

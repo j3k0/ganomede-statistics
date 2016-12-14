@@ -103,19 +103,25 @@ fakeDate = (id) ->
   month = 2592000000 # millis in a month
   epoch + (parseInt(id.replace(/[0abcdef]/g,'')) % month)
 
+# processLoadedResults :: [LoadedResults] -> GamesBody.results
+processLoadedResults = (results) ->
+  results
+  .map (game, index) ->
+    id: game.id
+    date: game.date || fakeDate(game.id)
+    type: game.type
+    gameOverData:
+      players: game.gameOverData.players.map (playerScore) ->
+        username: playerScore.name
+        score: playerScore.score
+  .sort (a, b) -> a.date - b.date
+
 # loadGames :: CoordinatorClient -> Secret -> SeqNumber -> Task<GamesBody>
 loadGames = Fetcher._loadGames = (client, secret) -> (lastSeq) ->
   client.gameover secret, lastSeq
   .map (body) ->
     last_seq: body.last_seq
-    results: body.results.map (game, index) ->
-      id: game.id
-      date: game.date || fakeDate(game.id)
-      type: game.type
-      gameOverData:
-        players: game.gameOverData.players.map (playerScore) ->
-          username: playerScore.name
-          score: playerScore.score
+    results: processLoadedResults(body.results)
 
 # loadLastSeq :: Storage -> _ -> Task<SeqNumber>
 loadLastSeq = (storage) -> () -> new Task (reject, resolve) ->
