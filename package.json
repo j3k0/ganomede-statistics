@@ -14,6 +14,7 @@
   "dependencies": {
     "alkindi": "^1.1.1",
     "authdb": "^0.1.0",
+    "binary-search-tree-continued": "0.0.4",
     "blanket": "^1.1.6",
     "bunyan": "^1.2.3",
     "coffee-script": "^1.8.0",
@@ -28,7 +29,6 @@
     "mocha": "^2.0.1",
     "redis": "^0.12.1",
     "restify": "^2.8.3",
-    "sorted-array": "^2.0.1",
     "vasync": "^1.6.2"
   },
   "config": {

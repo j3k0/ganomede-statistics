@@ -1,7 +1,7 @@
 Task = require 'data.task'
 Async = require('control.async') Task
 alkindi = require 'alkindi'
-SortedArray = require 'sorted-array'
+{ AVLTree } = require('binary-search-tree-continued')
 
 log = require '../log'
 clients = require '../clients'
@@ -26,38 +26,34 @@ CoordinatorClient = require './coordinator-client'
 
 nop = () ->
 
+# Compute the order between 2 games
+gamesOrder = (a, b) ->
+  if a.date < b.date
+    return -1
+  if a.date > b.date
+    return 1
+  # When dates are identical, compare based on player names
+  pa = a.gameOverData.players[0].username
+  pb = b.gameOverData.players[0].username
+  if pa < pb
+    return -1
+  if pa > pb
+    return 1
+  return 0
+
 # Array [Game] sorted by date
-# TODO: store this on redis... for now let's work from memory
-waitingList = new SortedArray([], (a, b) ->
-  if a.date == b.date
-    # When dates are identical, compare based on player names
-    pa = a.gameOverData.players[0].username
-    pb = b.gameOverData.players[0].username
-    if pa == pb
-    then return 0
-    else if pa < pb
-    then return -1
-    else return 1
-  else if a.date < b.date
-  then -1
-  else  1
-)
+waitingList = new AVLTree({ compareKeys: gamesOrder})
 
 waitingListAdd = (game) ->
-  existing = waitingList.search game
-  if existing < 0
-    waitingList.insert game
+  waitingList.insert game, true
   Task.of game
 
 waitingListPop = () ->
-  if waitingList.array.length == 0
-    Task.of null
-  else
-    first = waitingList.array[0]
-    waitingList.array.splice(0, 1)
-    Task.of first
+  first = waitingList.getMinKey()
+  if first
+    waitingList.delete first
+  Task.of first
 
-#
 # FetcherConfig: ClientConfig (see ../clients.coffee)
 #
 
@@ -123,7 +119,7 @@ deferred = (x) ->
     setImmediate ->
       resolve x
 
-# loadGames :: CoordinatorClient -> Secret -> SeqNumber -> Task<GamesBody>
+# loadGames :: CoordinatorClient -> Secret -> SeqNumber -> Task<SeqNumber>
 loadGames = Fetcher._loadGames = (storage, client, secret) -> (lastSeq) ->
   client.gameover secret, lastSeq
   .map (body) ->
