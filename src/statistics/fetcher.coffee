@@ -90,9 +90,10 @@ Fetcher.create = (config, storage) -> new Fetcher(config, storage)
 fetcherStep = Fetcher._step = (client, storage, secret) ->
   lockWorker(storage)
   .chain loadLastSeq(storage)
-  .chain loadGames(client, secret)
-  .chain processGamesBody(storage)
+  .chain loadGames(storage, client, secret)
   .chain saveLastSeq(storage)
+  .chain -> processWaitingList(storage)
+  # .chain processGamesBody(storage)
   .chain unlockWorker(storage)
 
 # fakeDate :: Id -> Timestamp
@@ -116,12 +117,30 @@ processLoadedResults = (results) ->
         score: playerScore.score
   .sort (a, b) -> a.date - b.date
 
+# callstack cleaner
+deferred = (x) ->
+  new Task (reject, resolve) ->
+    setImmediate ->
+      resolve x
+
 # loadGames :: CoordinatorClient -> Secret -> SeqNumber -> Task<GamesBody>
-loadGames = Fetcher._loadGames = (client, secret) -> (lastSeq) ->
+loadGames = Fetcher._loadGames = (storage, client, secret) -> (lastSeq) ->
   client.gameover secret, lastSeq
   .map (body) ->
     last_seq: body.last_seq
     results: processLoadedResults(body.results)
+  .chain (gamesBody) ->
+    log.info
+      last_seq:gamesBody.last_seq
+      lastSeq:lastSeq
+      limit: client.limit
+    addGamesToWaitingList(storage)(gamesBody.results)
+    .chain deferred
+    .chain ->
+      if gamesBody.last_seq - lastSeq < client.limit
+        Task.of gamesBody.last_seq # we're done
+      else
+        loadGames(storage, client, secret)(gamesBody.last_seq)
 
 # loadLastSeq :: Storage -> _ -> Task<SeqNumber>
 loadLastSeq = (storage) -> () -> new Task (reject, resolve) ->
@@ -158,6 +177,7 @@ processWaitingList = (storage) ->
       Task.of null
     else
       processGame(storage)(game)
+      .chain deferred
       .chain -> processWaitingList(storage)
 
 # outcomeToGame :: GameType -> GameOutcome -> Game

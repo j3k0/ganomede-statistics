@@ -156,12 +156,12 @@ describe 'statistics.fetcher', ->
 
   describe 'loadGames', ->
     testWith = (testData, done) ->
-      task = Fetcher._loadGames(fakeClient(testData), null)(null)
+      task = Fetcher._loadGames(fakeStorage(), fakeClient(testData), null)(null)
       expect(task).to.be.a Task
       task.fork(
         notCalled
         (body) ->
-          types.gamesBody body
+          types.seqNumber body
           done()
       )
     it 'retrieve and format the games from couchdb (quick test)', (done) ->
