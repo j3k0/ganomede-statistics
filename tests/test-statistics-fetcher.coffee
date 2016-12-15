@@ -85,10 +85,11 @@ testGamesBody = (i0, i1, i2) ->
   ]
 
 fakeClient = (testData) ->
+  limit: 2048
   gameover: () -> Task.of(testData)
 
 fakeStorage = ->
-  archives: { jeko:[], sousou:[] }
+  archives: {}
   key: (type,username) -> "#{type}/#{username}"
   archiveGameArgs: []
   archiveGame: (type, username, game, callback) ->
@@ -108,14 +109,9 @@ fakeStorage = ->
   saveLevel: (t,u,l,callback) -> callback null, null
   getRank: (t,u,callback) -> callback null, 12
   getArchives: (type, username, callback) ->
-    a = @archives[@key(type,username)]
-    if !a then return callback null, []
-    if username == "jeko"
-      callback null, @archives[@key(type, username)]
-    else if username == "sousou"
-      callback null, @archives[@key(type, username)]
-    else
-      callback new Error("error")
+    k = @key(type,username)
+    a = @archives[k] || (@archives[k] = [])
+    callback null, @archives[@key(type, username)]
   incrGameIndex: (callback) ->
     callback null, @gameindex = ((@gameindex || 0) + 1)
 

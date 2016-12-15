@@ -12,10 +12,12 @@ class CoordinatorClient
     if !jsonClient
       throw new Error('jsonClient required')
     @client = jsonClient
+    @limit = 2048
 
   # String -> String -> Task<GamesBody>
   gameover: (secret, since) -> new Task (reject, resolve) =>
-    path = gameoverPath @client, secret, since, 100000000
+    path = gameoverPath @client, secret, since, @limit
+    log.info get:path
     @client.get path, gameoverHandler(reject, resolve)
 
 CoordinatorClient.create = (jsonClient) -> new CoordinatorClient(jsonClient)
