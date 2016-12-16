@@ -21,7 +21,8 @@ clients = require '../clients'
 
 CoordinatorClient = require './coordinator-client'
 {
-  extend, monadsChain, silentChain, taskFromNode, ensure
+  extend, monadsChain, silentChain, taskFromNode, ensure,
+  deferred
 } = require '../toolbox'
 
 nop = () ->
@@ -113,13 +114,8 @@ processLoadedResults = (results) ->
         score: playerScore.score
   .sort (a, b) -> a.date - b.date
 
-# callstack cleaner
-deferred = (x) ->
-  new Task (reject, resolve) ->
-    setImmediate ->
-      resolve x
-
-# loadGames :: CoordinatorClient -> Secret -> SeqNumber -> Task<SeqNumber>
+# loadGames ::
+#   Storage -> CoordinatorClient -> Secret -> SeqNumber -> Task<SeqNumber>
 loadGames = Fetcher._loadGames = (storage, client, secret) -> (lastSeq) ->
   client.gameover secret, lastSeq
   .map (body) ->

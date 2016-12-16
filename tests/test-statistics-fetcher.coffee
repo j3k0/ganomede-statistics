@@ -170,17 +170,6 @@ describe 'statistics.fetcher', ->
       testWith coordinatorGameOverNoDate, done
     it 'process many games quickly and without failing', (done) ->
       testWith coordinatorGameOverFull, done
-    #it 'sorts games by date', (done) ->
-    #  task = Fetcher._loadGames(fakeStorage(), fakeClient(coordinatorGameOverFull), null)(null)
-    #  task.fork(
-    #    notCalled
-    #    (body) ->
-    #      lastDate = 0
-    #      for game in body.results
-    #        expect(game.date).not.to.be.below lastDate
-    #        lastDate = game.date
-    #      done()
-    #  )
 
   describe 'processGamesBody', ->
 
