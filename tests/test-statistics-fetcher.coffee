@@ -171,32 +171,33 @@ describe 'statistics.fetcher', ->
     it 'process many games quickly and without failing', (done) ->
       testWith coordinatorGameOverFull, done
 
-  describe 'processGamesBody', ->
+  # describe 'processGamesBody', ->
 
-    testCombination = (i0, i1, i2) -> (done) ->
-      storage = fakeStorage()
-      # state = secret:"1234", last_seq:5
-      testData = testGamesBody i0, i1, i2
-      task = Fetcher._processGamesBody(storage) testData
-      expect(task).to.be.a Task
-      task.fork(
-        notCalled
-        (newSince) ->
-          # expect(newState.secret).to.eql "1234"
-          expect(newSince).to.eql testData.last_seq
-          ja = storage.archives["tigger/v1/jeko"]
-          sa = storage.archives["tigger/v1/sousou"]
-          expect(ja.length).to.eql 3
-          expect(sa.length).to.eql 3
-          expect(ja[ja.length-1].outcome.newLevel).to.eql 59
-          expect(sa[sa.length-1].outcome.newLevel).to.eql 37
-          done()
-      )
-    it 'saves games when sorted by date (1,2,3)', testCombination("1", "2", "3")
-    it 'saves games in any orders (1,3,2)', testCombination("1", "3", "2")
-    it 'saves games in any orders (2,1,3)', testCombination("2", "1", "3")
-    it 'saves games in any orders (2,3,1)', testCombination("2", "3", "1")
-    it 'saves games in any orders (3,1,2)', testCombination("3", "1", "2")
-    it 'saves games in any orders (3,2,1)', testCombination("3", "2", "1")
+  #   testCombination = (i0, i1, i2) -> (done) ->
+  #     storage = fakeStorage()
+  #     # state = secret:"1234", last_seq:5
+  #     testData = testGamesBody i0, i1, i2
+  #     task = Fetcher._processGamesBody(storage) testData
+  #     expect(task).to.be.a Task
+  #     task.fork(
+  #       notCalled
+  #       (newSince) ->
+  #         # expect(newState.secret).to.eql "1234"
+  #         expect(newSince).to.eql testData.last_seq
+  #         ja = storage.archives["tigger/v1/jeko"]
+  #         sa = storage.archives["tigger/v1/sousou"]
+  #         expect(ja.length).to.eql 3
+  #         expect(sa.length).to.eql 3
+  #         expect(ja[ja.length-1].outcome.newLevel).to.eql 59
+  #         expect(sa[sa.length-1].outcome.newLevel).to.eql 37
+  #         done()
+  #     )
+  #   it 'saves games when sorted by date (1,2,3)',
+  #     testCombination("1", "2", "3")
+  #   it 'saves games in any orders (1,3,2)', testCombination("1", "3", "2")
+  #   it 'saves games in any orders (2,1,3)', testCombination("2", "1", "3")
+  #   it 'saves games in any orders (2,3,1)', testCombination("2", "3", "1")
+  #   it 'saves games in any orders (3,1,2)', testCombination("3", "1", "2")
+  #   it 'saves games in any orders (3,2,1)', testCombination("3", "2", "1")
 
 # vim: ts=2:sw=2:et:

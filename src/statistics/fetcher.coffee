@@ -90,7 +90,6 @@ fetcherStep = Fetcher._step = (client, storage, secret) ->
   .chain loadGames(storage, client, secret)
   .chain saveLastSeq(storage)
   .chain -> processWaitingList(storage)
-  # .chain processGamesBody(storage)
   .chain unlockWorker(storage)
 
 # fakeDate :: Id -> Timestamp
@@ -152,14 +151,14 @@ unlockWorker = (storage) -> () -> new Task (reject, resolve) ->
   storage.unlock "worker", taskFromNode(reject, resolve)
 
 # processGamesBody :: Storage -> GamesBody -> Task<SeqNumber>
-processGamesBody = Fetcher._processGamesBody =
-  (storage) -> (body) ->
-    if ensure [ -> isGamesBody body ]
-      processGames(storage)(body?.results || [])
-      .chain () -> processWaitingList(storage)
-      .map () -> body?.last_seq
-    else
-      Task.rejected ensure.error
+# processGamesBody = Fetcher._processGamesBody =
+#   (storage) -> (body) ->
+#     if ensure [ -> isGamesBody body ]
+#       processGames(storage)(body?.results || [])
+#       .chain () -> processWaitingList(storage)
+#       .map () -> body?.last_seq
+#     else
+#       Task.rejected ensure.error
 
 # processWaitingList :: Storage -> Task<_>
 processWaitingList = (storage) ->
@@ -172,50 +171,6 @@ processWaitingList = (storage) ->
       .chain deferred
       .chain -> processWaitingList(storage)
 
-# outcomeToGame :: GameType -> GameOutcome -> Game
-outcomeToGame = (type) -> (outcome) ->
-  if ensure [
-    -> isGameType type
-    -> isGameOutcome outcome
-  ]
-    id: outcome.game.id
-    date: outcome.game.date
-    type: type,
-    gameOverData:
-      players: outcome.game.players
-
-concat = (a, b) -> a.concat(b)
-
-# outcomes :: GameWithArchives -> [GameOutcome]
-outcomes = (gameWA) ->
-  if ensure [ -> isGameWithArchive gameWA ]
-    gameWA.archives
-    .map((playerArchive) -> playerArchive.games)
-    .reduce(concat, [])
-
-# futureOutcomes :: GameWithArchives -> [GameOutcome]
-futureOutcomes = (gameWA) ->
-  if ensure [ -> isGameWithArchive gameWA ]
-    outcomes(gameWA)
-    .filter (outcome) -> outcome.game.date > gameWA.game.date
-
-# futureGames :: GameWithArchives -> [Game]
-futureGames = (gameWA) ->
-  if ensure [ -> isGameWithArchive gameWA ]
-    futureOutcomes(gameWA)
-    .map outcomeToGame(gameWA.game.type)
-
-# onlyPastGames :: GameWithArchives -> GameWithArchives
-# returns a GameWithArchives only containing past games
-onlyPastGames = (gameWA) ->
-  if ensure [ -> isGameWithArchive gameWA ]
-    game: gameWA.game
-    index: gameWA.index
-    archives: gameWA.archives.map (playerArchive) ->
-      username: playerArchive.username
-      games: playerArchive.games.filter (gameOutcome) ->
-        gameOutcome.game.date < gameWA.game.date
-
 # addGameToWaitingList :: Storage -> Game -> Task(Game)
 addGameToWaitingList = (storage) -> (game) ->
   if ensure [ -> isGame game ]
@@ -226,71 +181,15 @@ addGameToWaitingList = (storage) -> (game) ->
 addGamesToWaitingList = (storage) ->
   silentChain Task.of, addGameToWaitingList(storage)
 
-# removeGameFromPlayerArchive ::
-#   Storage -> Game -> Username -> Task(_)
-removeGameFromPlayerArchive = (storage, game) -> (username) ->
-  if ensure [
-    -> isGame     game
-    -> isUsername username
-  ]
-    new Task (reject, resolve) ->
-      usernames
-      log.info {
-        date:     game.date
-        username: username
-      }, "unarchived"
-      storage.unarchiveGame(
-        game.type
-        username
-        game.date
-        taskFromNode(reject, resolve)
-      )
-  else
-    Task.rejected ensure.error
-
-# removeGameFromArchives :: Storage -> Game ->Task(_)
-removeGameFromArchives = (storage) -> (game) ->
-  if ensure [ -> isGame game ]
-    f = removeGameFromPlayerArchive(storage, game)
-    silentChain(Task.of, f) usernames(game)
-  else
-    Task.rejected ensure.error
-
-# cleanup archive of all concerned players
-# removeFromArchives :: Storage -> [Game] -> Task([Game])
-removeGamesFromArchives = (storage) ->
-  silentChain Task.of, removeGameFromArchives(storage)
-
-# noFutureGames :: Storage -> GameWithArchives -> Task(_)
-noFutureGames = (storage, gameWA) ->
-  if ensure [ -> isGameWithArchive gameWA ]
-    games = futureGames gameWA
-    addGamesToWaitingList(storage)(games)
-    .chain removeGamesFromArchives(storage)
-  else
-    Task.rejected ensure.error
-
-# setAsideFutureGames :: Storage -> GameWithArchives -> Task(GameWithArchives)
-setAsideFutureGames = (storage) -> (gameWA) ->
-  if ensure [ -> isGameWithArchive gameWA ]
-    noFutureGames(storage, gameWA)
-    .map -> onlyPastGames(gameWA)
-  else
-    Task.rejected ensure.error
-
 # processGame :: Storage -> Game -> Task(_)
 processGame = Fetcher._processGame = (storage) -> (game) ->
   if ensure [ -> isGame game ]
     loadArchives(storage, game)
-    .chain setAsideFutureGames(storage)
     .chain incrGameIndex(storage)
     .map   addGame
     .chain saveOutcomes(storage)
   else
     Task.rejected ensure.error
-
-# processGames :: Storage -> [Game] -> Task([Game])
-processGames = (storage) -> silentChain Task.of, processGame(storage)
 
 # loadArchives :: Storage -> Game -> Task(GameWithArchives)
 loadArchives = (storage, game) ->
