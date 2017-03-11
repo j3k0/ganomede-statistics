@@ -1,0 +1,88 @@
+version: '2'
+services:
+
+  sut:
+    build: .
+    command: sh -c "npm run lint && npm test && ./tests/rest_api.sh"
+    volumes:
+     - ./src:/home/app/code/src
+     - ./tests:/home/app/code/tests
+    depends_on:
+     - app
+    environment:
+     - "BASE_URL=http://app:8000"
+     - "API_SECRET=1234"
+     - "LOG_LEVEL=error"
+     - "NODE_ENV="
+
+  app:
+    build: .
+    volumes:
+     - ./src:/home/app/code/src
+     - ./index.js:/home/app/code/index.js
+    depends_on:
+     - redis
+     - coordinator
+    environment:
+     - "API_SECRET=1234"
+     - "REDIS_STATISTICS_PORT_6379_TCP_ADDR=redis"
+     - "DIRECTORY_PORT_8000_TCP_ADDR=directory"
+     - "NODE_ENV="
+     - "LOG_LEVEL=debug"
+    ports:
+     - "8000:8000"
+
+  directory:
+    image: ganomede/directory:v0.3.1
+    depends_on:
+      - directorysync
+    environment:
+     - "DIRECTORY_PORT_8000_TCP_ADDR=directory"
+     - "COUCH_DIRECTORY_PORT_5984_TCP_ADDR=couch"
+     - "REDIS_AUTH_PORT_6379_TCP_ADDR=redis"
+     - "API_SECRET=1234"
+     - "COUCH_DIRECTORY_SYNC="
+    ports:
+     - "8001:8000"
+
+  # will just sync the database
+  directorysync:
+    image: ganomede/directory:v0.3.1
+    depends_on:
+     - couch
+     - redis
+    environment:
+     - "COUCH_DIRECTORY_PORT_5984_TCP_ADDR=couch"
+     - "REDIS_AUTH_PORT_6379_TCP_ADDR=redis"
+     - "API_SECRET=1234"
+     - "COUCH_DIRECTORY_SYNC=1"
+
+  coordinator:
+    image: ganomede/coordinator:v1.4.0
+    depends_on:
+      - couch
+    environment:
+     - "REDIS_AUTH_PORT_6379_TCP_ADDR=redis"
+     - "COUCH_GAMES_PORT_5984_TCP_ADDR=couch"
+     - "NOTIFICATIONS_PORT_8080_TCP_ADDR=notifications"
+     - "NOTIFICATIONS_PORT_8080_TCP_PORT=8000"
+     - "API_SECRET=1234"
+     - "GAME_SERVERS_URL=http://turngame:8000"
+    ports:
+     - "8002:8000"
+
+  notifications:
+    image: ganomede/notifications:v1.7.5
+    depends_on:
+      - redis
+    environment:
+     - "REDIS_AUTH_PORT_6379_TCP_ADDR=redis"
+     - "REDIS_NOTIFICATIONS_PORT_6379_TCP_ADDR=redis"
+     - "REDIS_ONLINELIST_PORT_6379_TCP_ADDR=redis"
+     - "REDIS_PUSHAPI_PORT_6379_TCP_ADDR=redis"
+     - "API_SECRET=1234"
+
+  couch:
+    image: klaemo/couchdb:1.6.1
+  redis:
+    image: redis:alpine

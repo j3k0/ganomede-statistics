@@ -3,6 +3,7 @@ endpoint = require '../endpoint'
 utils = require './utils'
 Storage = require './storage'
 Fetcher = require './fetcher'
+tagizer = require 'ganomede-tagizer'
 
 # .../archive endpoint
 archive = (storage) -> (req, res, next) ->
@@ -23,8 +24,9 @@ createApi = (options={}) ->
   # Register routes
   addRoutes: (prefix, server) ->
     base = "/#{prefix}/:gameType/:gameVersion/:username"
-    server.get "#{base}/archive", archive(storage)
-    server.get "#{base}/rank", rank(storage)
+    tagParam = tagizer.middleware 'params', 'tag'
+    server.get "#{base}/archive", tagParam, archive(storage)
+    server.get "#{base}/rank", tagParam, rank(storage)
 
   # Run the games fetcher
   runFetcherStep: (callback) ->
