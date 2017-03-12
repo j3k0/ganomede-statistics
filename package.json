@@ -9,7 +9,7 @@
     "test": "mocha -b --recursive --compilers coffee:coffee-script/register tests",
     "lint": "sh -c 'eslint src/ && coffeelint -q src tests'",
     "coverage": "mocha -b --compilers coffee:coffee-script/register --require coffee-coverage/register-istanbul tests/",
-    "coverage-report": "npm run coverage && sed -i bak 's/about-api.coffee\",\\([a-z0-9\":{,]*\\),\"13\":1}/about-api.coffee\",\\1}/' coverage/coverage-coffee.json && ./node_modules/.bin/istanbul report"
+    "coverage-report": "sed -i bak 's/about-api.coffee\",\\([a-z0-9\":{,]*\\),\"13\":1}/about-api.coffee\",\\1}/' coverage/coverage-coffee.json && ./node_modules/.bin/istanbul report"
   },
   "author": "Jean-Christophe Hoelt <hoelt@fovea.cc>",
   "license": "GPL",

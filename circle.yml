@@ -8,4 +8,5 @@ test:
   post:
     - npm install https://github.com/nickmerwin/node-coveralls
     - npm run coverage
+    - npm run coverage-report
     - cat ./coverage/lcov.info | ./node_modules/.bin/coveralls
