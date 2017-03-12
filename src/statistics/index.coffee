@@ -23,7 +23,7 @@ createApi = (options={}) ->
 
   # Register routes
   addRoutes: (prefix, server) ->
-    base = "/#{prefix}/:gameType/:gameVersion/:username"
+    base = "/#{prefix}/:gameType/:gameVersion/:tag"
     tagParam = tagizer.middleware 'params', 'tag'
     server.get "#{base}/archive", tagParam, archive(storage)
     server.get "#{base}/rank", tagParam, rank(storage)
