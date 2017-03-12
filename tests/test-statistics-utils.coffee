@@ -65,7 +65,13 @@ describe 'statistics.utils', ->
       .fork expectError(done, 400), notCalled
 
   describe 'loadArchive', ->
-    it 'is pending'
+    it 'returns a Task', ->
+      redis = require 'fakeredis'
+      redisClient = redis.createClient()
+      Storage = require '../src/statistics/storage'
+      storage = new Storage redisClient, 'whatever'
+      params = {username: 'alice', gameType: 'triplex/v2'}
+      expect(utils.loadArchive(storage)(params)).to.be.a Task
 
   describe 'getStats', ->
     it 'is pending'
