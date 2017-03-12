@@ -87,7 +87,7 @@ class Storage
     lock @redis, @lockKey(lockName), timeout
 
   lock: (lockName, callback) ->
-    lockTask lockName
+    @lockTask lockName
     .fork(
       (err) -> callback err
       () -> callback null, lockName
