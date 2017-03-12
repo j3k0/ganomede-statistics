@@ -5,9 +5,9 @@
   "description": "Ganomede statistics micro service",
   "main": "index.js",
   "scripts": {
-    "start": "./node_modules/.bin/forever start index.js",
-    "stop": "./node_modules/.bin/forever stop index.js",
-    "test": "make test"
+    "start": "node index.js",
+    "test": "mocha -b --recursive --compilers coffee:coffee-script/register tests",
+    "lint": "sh -c 'eslint src/ && coffeelint -q src tests'"
   },
   "author": "Jean-Christophe Hoelt <hoelt@fovea.cc>",
   "license": "GPL",
@@ -25,6 +25,7 @@
     "data.task": "^3.0.0",
     "eslint": "^0.10.0",
     "forever": "^0.13.0",
+    "ganomede-tagizer": "^2.0.0",
     "jshint": "^2.5.10",
     "mocha": "^2.0.1",
     "redis": "^0.12.1",
