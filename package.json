@@ -8,7 +8,8 @@
     "start": "node index.js",
     "test": "mocha -b --recursive --compilers coffee:coffee-script/register tests",
     "lint": "sh -c 'eslint src/ && coffeelint -q src tests'",
-    "coverage": "istanbul cover --dir doc _mocha -- --recursive --compilers coffee:coffee-script/register tests && istanbul report"
+    "coverage": "mocha -b --compilers coffee:coffee-script/register --require coffee-coverage/register-istanbul tests/",
+    "coverage-report": "npm run coverage && sed -i bak 's/about-api.coffee\",\\([a-z0-9\":{,]*\\),\"13\":1}/about-api.coffee\",\\1}/' coverage/coverage-coffee.json && ./node_modules/.bin/istanbul report"
   },
   "author": "Jean-Christophe Hoelt <hoelt@fovea.cc>",
   "license": "GPL",
@@ -28,7 +29,6 @@
     "forever": "^0.13.0",
     "ganomede-tagizer": "^2.0.1",
     "jshint": "^2.5.10",
-    "mocha": "^2.0.1",
     "redis": "^0.12.1",
     "restify": "^4.2.0",
     "vasync": "^1.6.2"
@@ -43,10 +43,12 @@
     }
   },
   "devDependencies": {
+    "coffee-coverage": "^2.0.1",
     "expect.js": "^0.3.1",
     "fakeredis": "^0.3.1",
     "ganomede-substract-game": "^1.1.0",
-    "istanbul": "https://github.com/duereg/istanbul/archive/master.tar.gz",
+    "istanbul": "^0.4.5",
+    "mocha": "^3.2.0",
     "supertest": "^0.15.0"
   }
 }
