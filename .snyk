@@ -1,0 +1,11 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.7.0
+ignore: {}
+# patches apply the minimum changes required to fix a vulnerability
+patch:
+  'npm:hawk:20160119':
+    - ganomede-tagizer > ganomede-directory > nano > follow > request > hawk:
+        patched: '2017-04-27T22:00:25.361Z'
+  'npm:request:20160119':
+    - ganomede-tagizer > ganomede-directory > nano > follow > request:
+        patched: '2017-04-27T22:00:25.361Z'
