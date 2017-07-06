@@ -104,11 +104,12 @@ fakeDate = (id) ->
 processLoadedResults = (results) ->
   results
   .map (game, index) ->
+    players = game.gameOverData.players || game.gameOverData?.state?.players || []
     id: game.id
     date: game.date || fakeDate(game.id)
     type: game.type
     gameOverData:
-      players: game.gameOverData.players.map (playerScore) ->
+      players: players.map (playerScore) ->
         username: playerScore.name
         score: playerScore.score
   .sort (a, b) -> a.date - b.date
