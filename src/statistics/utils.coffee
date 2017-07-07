@@ -100,7 +100,13 @@ archiveRequest = exports.archiveRequest = (storage, params) ->
 # RequestParams -> Task(ResponseArchive)
 archiveEndpoint = exports.archiveEndpoint = (storage, params) ->
   archiveRequest storage, params
-  .map   (data) -> data.archive
+  .map   (data) ->
+    data.archive.map (gameOutcome) ->
+      game:
+        id: gameOutcome.game.id
+        date: gameOutcome.game.date * 0.001
+        players: gameOutcome.game.players
+      outcome: gameOutcome.outcome
 
 # RequestParams -> Task(ResponseArchive)
 rankEndpoint = exports.rankEndpoint = (storage, params) ->
