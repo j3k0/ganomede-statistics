@@ -13,7 +13,7 @@ _clients = {}
 clients = (config, factory) -> (type) ->
   _clients[type] || _clients[type] = factory restify.createJsonClient
     url: urllib.format
-      protocol: 'http'
+      protocol: config.protocol || 'http'
       hostname: config.host
       port:     config.port
       pathname: type

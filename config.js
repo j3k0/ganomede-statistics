@@ -5,6 +5,7 @@ module.exports = {
   routePrefix: process.env.ROUTE_PREFIX || pkg.api,
 
   coordinator: {
+    protocol: process.env.COORDINATOR_PORT_8080_TCP_PROTOCOL || 'http',
     host: process.env.COORDINATOR_PORT_8080_TCP_ADDR || 'localhost',
     port: +process.env.COORDINATOR_PORT_8080_TCP_PORT || 8080
   },
