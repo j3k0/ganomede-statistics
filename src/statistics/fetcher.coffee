@@ -22,7 +22,7 @@ clients = require '../clients'
 CoordinatorClient = require './coordinator-client'
 {
   extend, monadsChain, silentChain, taskFromNode, ensure,
-  deferred
+  deferred, plausibleDate
 } = require '../toolbox'
 
 nop = () ->
@@ -96,8 +96,8 @@ fetcherStep = Fetcher._step = (client, storage, secret) ->
 # A deterministic pseudo-random date in January 2016
 # based on the game ID.
 fakeDate = (id) ->
-  epoch = 1451606400000 # 2016-01-01
-  month = 2592000000 # millis in a month
+  epoch = 1451606400 # 2016-01-01
+  month = 2592000 # seconds in a month
   epoch + (parseInt(id.replace(/[0abcdef]/g,'')) % month)
 
 # processLoadedResults :: [LoadedResults] -> GamesBody.results
@@ -107,7 +107,7 @@ processLoadedResults = (results) ->
     god = game.gameOverData || {}
     players = god.players || god.state?.players || []
     id: game.id
-    date: game.date || fakeDate(game.id)
+    date: plausibleDate(game.date || fakeDate(game.id))
     type: game.type
     gameOverData:
       players: players.map (playerScore) ->
@@ -324,12 +324,12 @@ saveOutcomes = Fetcher._saveOutcomes = (storage) ->
 
 # 15/08/2015 00:00 GMT
 defaultDate = (gameWA) ->
-  1000 * (alkindi.TRIPOCH + gameWA.index)
+  alkindi.TRIPOCH + gameWA.index
 
 # akGame :: GameWithArchives -> AkGame
 akGame = (gameWA) ->
   id: gameWA.game.id
-  date: 0.001 * (gameWA.game.date || defaultDate(gameWA))
+  date: (gameWA.game.date || defaultDate(gameWA))
   players: players(gameWA.game)
 
 noDecay = (t0,t1,level) ->
@@ -343,16 +343,21 @@ fromAkOutcome = (type) -> (ak) ->
     outcome: ak.game.outcome
     game:
       id: ak.game.game.id
-      date: ak.game.game.date * 1000
+      date: ak.game.game.date
       players: ak.game.game.players
 
 # addGame :: GameWithArchives -> [PlayerGameOutcome]
 addGame = Fetcher._addGame = (gameWA) ->
+  log.info {gameWA}, 'addGame'
   alkindi.addGame(
     alkindi.relativeLevelUpdate,
     noDecay,
     gameWA.archives, akGame(gameWA)
-  ).map fromAkOutcome(gameWA.game.type)
+  )
+  .map (ak) ->
+    log.info {ak}, 'addGame.outcome'
+    ak
+  .map fromAkOutcome(gameWA.game.type)
 
 module.exports = Fetcher
 # vim: ts=2:sw=2:et:

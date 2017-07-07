@@ -104,7 +104,7 @@ archiveEndpoint = exports.archiveEndpoint = (storage, params) ->
     data.archive.map (gameOutcome) ->
       game:
         id: gameOutcome.game.id
-        date: gameOutcome.game.date * 0.001
+        date: gameOutcome.game.date
         players: gameOutcome.game.players
       outcome: gameOutcome.outcome
 

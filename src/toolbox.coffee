@@ -60,3 +60,14 @@ ensure = exports.ensure = (calls) ->
       ensure.error = err
   !ensure.error
 
+# Fix the seconds/millis dates mess.
+#
+# When expecting a date between years 1973 and 2603, will
+# make sure to return epoch in seconds.
+plausibleDate = exports.plausibleDate = (date) ->
+  while date < 100000000
+    date *= 1000
+  while date > 20000000000
+    date *= 0.001
+  return date
+
