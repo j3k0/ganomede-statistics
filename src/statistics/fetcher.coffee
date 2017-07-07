@@ -104,7 +104,8 @@ fakeDate = (id) ->
 processLoadedResults = (results) ->
   results
   .map (game, index) ->
-    players = game.gameOverData.players || game.gameOverData?.state?.players || []
+    god = game.gameOverData || {}
+    players = god.players || god.state?.players || []
     id: game.id
     date: game.date || fakeDate(game.id)
     type: game.type
