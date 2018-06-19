@@ -6,9 +6,9 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "mocha -b --recursive --compilers coffee:coffee-script/register tests",
+    "test": "mocha -b --recursive --compilers coffee:coffeescript/register tests",
     "lint": "sh -c 'eslint src/ && coffeelint -q src tests'",
-    "coverage": "istanbul cover --dir doc _mocha -- --recursive --compilers coffee:coffee-script/register tests && istanbul report"
+    "coverage": "istanbul cover --dir doc _mocha -- --recursive --compilers coffee:coffeescript/register tests && istanbul report"
   },
   "author": "Jean-Christophe Hoelt <hoelt@fovea.cc>",
   "license": "GPL",
