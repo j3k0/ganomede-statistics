@@ -18,8 +18,8 @@
     "binary-search-tree-continued": "0.0.4",
     "blanket": "^1.1.6",
     "bunyan": "^1.2.3",
-    "coffee-script": "^1.8.0",
     "coffeelint": "^1.6.1",
+    "coffeescript": "^2.3.1",
     "concat-stream": "^1.4.7",
     "control.async": "^0.5.2",
     "data.maybe": "^1.2.1",
@@ -28,7 +28,7 @@
     "forever": "^0.13.0",
     "ganomede-tagizer": "^2.0.1",
     "jshint": "^2.5.10",
-    "mocha": "^2.0.1",
+    "mocha": "^5.2.0",
     "redis": "^0.12.1",
     "restify": "^4.2.0",
     "vasync": "^1.6.2"
