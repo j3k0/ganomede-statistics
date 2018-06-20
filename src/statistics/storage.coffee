@@ -112,8 +112,13 @@ class Storage
 
 # StorageConfig -> Storage
 Storage.create = exports.createStorage = (config) ->
+  options =
+    host: config.host
+    port: config.port
+  if config.db
+    options.db = config.db
   new Storage(
-    redis.createClient(config.port, config.host)
+    redis.createClient(options)
     config.prefix
   )
 

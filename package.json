@@ -29,7 +29,7 @@
     "ganomede-tagizer": "^2.0.1",
     "jshint": "^2.9.5",
     "mocha": "^5.2.0",
-    "redis": "^0.12.1",
+    "redis": "^2.8.0",
     "restify": "^4.3.4",
     "vasync": "^1.6.2"
   },

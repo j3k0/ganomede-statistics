@@ -13,6 +13,7 @@ module.exports = {
   redis: {
     host: process.env.REDIS_STATISTICS_PORT_6379_TCP_ADDR || 'localhost',
     port: +process.env.REDIS_STATISTICS_PORT_6379_TCP_PORT || 6379,
+    db: +process.env.REDIS_STATISTICS_PORT_6379_DB || null,
     prefix: pkg.api
   }
 };
