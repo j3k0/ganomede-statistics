@@ -97,3 +97,9 @@ DEPRECATED (not implemented this way)
             }]
         }
     ]
+
+# Links
+
+ - [dockerhub](https://hub.docker.com/r/ganomede/statistics/)
+ - [github](https://github.com/j3k0/ganomede-statistics)
+

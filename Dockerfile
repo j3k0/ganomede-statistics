@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
 
 RUN useradd app -d /home/app
 WORKDIR /home/app/code
-COPY package.json /home/app/code/package.json
+COPY package.json package-lock.json /home/app/code/
 RUN chown -R app /home/app
 
 USER app
