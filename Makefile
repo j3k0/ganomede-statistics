@@ -8,13 +8,13 @@ check: install
 	./node_modules/.bin/coffeelint -q src tests
 
 test: check
-	./node_modules/.bin/mocha -b --recursive --compilers coffee:coffee-script/register tests | ./node_modules/.bin/bunyan -l ${BUNYAN_LEVEL}
+	./node_modules/.bin/mocha -b --recursive --compilers coffee:coffeescript/register tests | ./node_modules/.bin/bunyan -l ${BUNYAN_LEVEL}
 
 coverage: test
 	@mkdir -p doc
 
 	@# coverage using blanket
-	@#./node_modules/.bin/mocha -b --compilers coffee:coffee-script/register --require blanket -R html-cov tests | ./node_modules/.bin/bunyan -l ${BUNYAN_LEVEL} > doc/coverage.html
+	@#./node_modules/.bin/mocha -b --compilers coffee:coffeescript/register --require blanket -R html-cov tests | ./node_modules/.bin/bunyan -l ${BUNYAN_LEVEL} > doc/coverage.html
 	@#echo "coverage exported to doc/coverage.html"
 
 	@# coverage using coffee-coverage
@@ -22,7 +22,7 @@ coverage: test
 	@#echo "coverage exported to doc/coverage.html"
 
 	@# coverage using istanbul
-	./node_modules/.bin/istanbul cover --dir doc ./node_modules/.bin/_mocha -- --recursive --compilers coffee:coffee-script/register tests
+	./node_modules/.bin/istanbul cover --dir doc ./node_modules/.bin/_mocha -- --recursive --compilers coffee:coffeescript/register tests
 	@echo "coverage exported to doc/lcov-report/index.html"
 
 run: check
@@ -51,7 +51,7 @@ docker-run: docker-prepare
 	docker-compose run --rm app make run BUNYAN_LEVEL=${BUNYAN_LEVEL}
 
 docker-test: docker-prepare
-	docker-compose run --rm app ./node_modules/.bin/mocha -b --recursive --compilers coffee:coffee-script/register tests
+	docker-compose run --rm app ./node_modules/.bin/mocha -b --recursive --compilers coffee:coffeescript/register tests
 
 docker-coverage: docker-prepare
 	docker-compose run --rm app make coverage

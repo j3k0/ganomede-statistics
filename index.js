@@ -1,4 +1,4 @@
-require('coffee-script/register');
+require('coffeescript/register');
 
 var cluster = require("cluster");
 var log = require("./src/log");

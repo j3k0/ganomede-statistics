@@ -2,12 +2,6 @@ FROM node:8-slim
 EXPOSE 8000
 MAINTAINER Jean-Christophe Hoelt <hoelt@fovea.cc>
 
-RUN apt-get update && apt-get install -y \
-   python2.7-minimal \
-   build-essential \
- && rm -rf /var/lib/apt/lists/* && \
- ln -s /usr/bin/python2.7 /usr/bin/python
-
 RUN useradd app -d /home/app
 WORKDIR /home/app/code
 COPY package.json package-lock.json /home/app/code/
