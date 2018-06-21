@@ -72,9 +72,11 @@ class Fetcher
   runStep: (callback) ->
     fetcherStep(@client, @storage, @secret).fork(
       (err) =>
-        log.error "Fetcher Error", @config
         if err.message != "lock can't be acquired"
-          log.error err.stack
+          log.error {stack:err.stack, message:err.message, config:@config},
+            "fetcher error"
+        else
+          log.error {config:@config}, "lock can't be acquired"
         callback err
       (data) ->
         callback data
@@ -123,16 +125,19 @@ loadGames = Fetcher._loadGames = (storage, client, secret) -> (lastSeq) ->
     last_seq: body.last_seq
     results: processLoadedResults(body.results)
   .chain (gamesBody) ->
-    log.info
-      last_seq:gamesBody.last_seq
-      lastSeq:lastSeq
+    log.info {
+      last_seq: gamesBody.last_seq
+      from_seq: lastSeq
       limit: client.limit
+    }, "loadGames"
     addGamesToWaitingList(storage)(gamesBody.results)
     .chain deferred
     .chain ->
       if gamesBody.last_seq - lastSeq < client.limit
+        log.info "we're done"
         Task.of gamesBody.last_seq # we're done
       else
+        log.info "loading more games..."
         loadGames(storage, client, secret)(gamesBody.last_seq)
 
 # loadLastSeq :: Storage -> _ -> Task<SeqNumber>
