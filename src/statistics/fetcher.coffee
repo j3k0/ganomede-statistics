@@ -355,7 +355,7 @@ fromAkOutcome = (type) -> (ak) ->
 addGame = Fetcher._addGame = (gameWA) ->
   log.info {gameWA}, 'addGame'
   alkindi.addGame(
-    alkindi.relativeLevelUpdate,
+    alkindi.simpleLevelUpdate,
     noDecay,
     gameWA.archives, akGame(gameWA)
   )
