@@ -12,7 +12,7 @@ class CoordinatorClient
     if !jsonClient
       throw new Error('jsonClient required')
     @client = jsonClient
-    @limit = 131072
+    @limit = 16384
 
   # String -> String -> Task<GamesBody>
   gameover: (secret, since) -> new Task (reject, resolve) =>
