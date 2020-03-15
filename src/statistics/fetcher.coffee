@@ -353,14 +353,14 @@ fromAkOutcome = (type) -> (ak) ->
 
 # addGame :: GameWithArchives -> [PlayerGameOutcome]
 addGame = Fetcher._addGame = (gameWA) ->
-  log.info {gameWA}, 'addGame'
+  # log.info {gameWA}, 'addGame'
   alkindi.addGame(
     alkindi.simpleLevelUpdate,
     noDecay,
     gameWA.archives, akGame(gameWA)
   )
   .map (ak) ->
-    log.info {ak}, 'addGame.outcome'
+    # log.info {ak}, 'addGame.outcome'
     ak
   .map fromAkOutcome(gameWA.game.type)
 
