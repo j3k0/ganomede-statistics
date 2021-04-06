@@ -24,7 +24,7 @@
     "control.async": "^0.5.2",
     "data.maybe": "^1.2.1",
     "data.task": "^3.0.0",
-    "eslint": "^0.10.0",
+    "eslint": "^4.18.2",
     "forever": "^0.15.3",
     "ganomede-tagizer": "^2.0.1",
     "jshint": "^2.9.5",
