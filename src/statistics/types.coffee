@@ -163,7 +163,7 @@ types.storageConfig = objectOf 'StorageConfig',
   prefix: baseType 'String', 'string'
 
 # SeqNumber: Int
-types.seqNumber = baseType 'Int', 'number'
+types.seqNumber = baseType 'String', 'string'
 
 # GamesBody: {
 #   last_seq: SeqNumber

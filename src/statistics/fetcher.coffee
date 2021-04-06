@@ -133,8 +133,8 @@ loadGames = Fetcher._loadGames = (storage, client, secret) -> (lastSeq) ->
     addGamesToWaitingList(storage)(gamesBody.results)
     .chain deferred
     .chain ->
-      bls = ('' + gamesBody.last_seq).split('-')[0];
-      cls = ('' + lastSeq).split('-')[0];
+      bls = ('' + gamesBody.last_seq).split('-')[0]
+      cls = ('' + lastSeq).split('-')[0]
       if bls - cls < client.limit
         log.info "we're done"
         Task.of gamesBody.last_seq # we're done
