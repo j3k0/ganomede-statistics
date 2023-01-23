@@ -47,6 +47,6 @@
     "fakeredis": "^0.3.1",
     "ganomede-substract-game": "^1.1.0",
     "istanbul": "https://github.com/duereg/istanbul/archive/master.tar.gz",
-    "supertest": "^0.15.0"
+    "supertest": "^6.3.3"
   }
 }
